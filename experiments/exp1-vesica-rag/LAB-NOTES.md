@@ -243,3 +243,84 @@ from when it was first drafted).
    attaches a "SPLIT RESULT — human adjudication" note in RESULTS.md rather
    than silently deciding. If a real split occurs, it's a candidate for a
    PRECOMMIT.md amendment to sharpen the rule.
+
+---
+
+## 2026-05-11 — Full-corpus encode complete; FAISS + box index built
+
+### Encode
+
+`scripts/03_encode_corpus.py` finished cleanly: **5,233,329 passages in
+532.5 min (~8.9 h), steady ~164 p/s on M4 Pro MPS.** 27 shards (0–26;
+shards 0–25 are 200k each, shard 26 is the remaining 33,329), 7.5 GB on
+disk at fp16. `index/contriever_meta.json` written. Process exited 0.
+
+### FAISS index
+
+`scripts/04_build_faiss.py`: `IndexFlatIP` over all 27 shards' L2-
+normalized 768-D vectors — **5,233,329 vectors in 18.8 s**. Exact cosine
+retrieval, no ANN approximation (PRECOMMIT.md §"Baselines": we don't want
+the baseline weakened by approximation, and the cost is one-shot).
+`index/contriever.faiss` + `index/chunk_ids.npy` + `index/contriever.meta.json`.
+
+### Box index — full-corpus α calibration
+
+`scripts/05_build_box_index.py` on the full 5.2M passages:
+
+- Random projection 768→64 (seed=1337), HNSW build over 5.2M 64-D centers
+  in **144 s**, per-chunk mean-of-k=10-NN distances in **85 s**.
+- **kNN distance stats: min=0.039, median=0.690, mean=0.676, max=0.991.**
+  Median 0.69 vs the shard-0 smoke's 0.74 — denser space with 26× more
+  points, as expected.
+- **α calibration grid** (1000 random pairs, target ratio 0.05):
+
+  | α | achieved ratio |
+  |---:|---:|
+  | 0.5 | 5.8e-7 |
+  | 1.0 | 8.5e-4 |
+  | 2.0 | 8.4e-3 |
+  | 4.0 | 0.0211 |
+  | 6.0 | 0.0203 |
+  | 8.0 | 0.0160 |
+  | 10.0 | 0.0176 |
+  | 13.0 | 0.0254 |
+  | 17.0 | 0.0239 |
+  | **22.0** | **0.0269** ← chosen |
+  | 30.0 | 0.0268 |
+  | 50.0 | 0.0199 |
+
+- **Chosen α = 22.0** (closest-in-log-ratio to 0.05 among the grid).
+
+### Observations on the calibration
+
+1. The ratio **plateaus around 0.02–0.027 for α ∈ [4, 30]** and is *not
+   monotonic* at the full-corpus scale (it climbs to ~0.021 at α=4, wobbles,
+   peaks ~0.027 at α=22, and *drops* back to ~0.020 at α=50). The 1000-pair
+   sample doesn't resolve a clean curve; what it shows is a noisy plateau
+   well below the 0.05 target. This is the high-D saturation Amendment 1
+   anticipated — the volume-ratio metric can't reach 0.05 in 64-D with
+   isotropic boxes regardless of α.
+2. The full-corpus α (22) differs from the shard-0 smoke α (50). Different
+   for the expected reason: 26× more points → smaller kNN distances → for
+   any α, smaller boxes. The grid-search picked a smaller α because the
+   ratio curve shifted. Neither value is "wrong"; both are "closest on the
+   grid to a target that 64-D isotropic boxes structurally can't hit."
+3. **No binding decision changes.** Amendment 1 already reframed the α
+   calibration as "closest-on-grid, achieved ratio logged." The chosen α=22
+   and achieved ratio 0.027 are recorded in `index/box.meta.json` and here.
+   If the slice's go/no-go signal is weak, the broader Experiment 1 takes
+   up the α question with anisotropic per-dim extents and/or a trained box
+   head — neither in scope for the slice.
+
+### Artifacts on disk (gitignored under `index/`)
+
+```
+contriever.faiss          ~16 GB  (IndexFlatIP, 5,233,329 × 768 fp32)
+chunk_ids.npy             ~?      (object array, 5,233,329 entries)
+box_centers.npy           1.2 GB  (5,233,329 × 64 fp32)
+box_half_widths.npy       1.2 GB  (5,233,329 × 64 fp32, isotropic per chunk)
+box_chunk_ids.npy         53 MB
+projection.npz            193 KB  (the 64×768 seeded Gaussian matrix)
+contriever_shards/        7.5 GB  (27 fp16 shards)
+contriever_meta.json, contriever.meta.json, box.meta.json
+```
