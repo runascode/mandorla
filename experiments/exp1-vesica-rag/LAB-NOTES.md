@@ -357,3 +357,79 @@ question contriever encode). Process exited 0.
 `scripts/04`, `scripts/05`, `scripts/06` all done against the full corpus.
 The slice is now unblocked for `scripts/07` (baseline run) and
 `scripts/08` (Vesica-RAG run), then `scripts/09` (scoring → RESULTS.md).
+
+---
+
+## 2026-05-11 — Eval-run throughput: a filename bug, a parallelization attempt, and a revert to sequential
+
+### Filename bug (fixed)
+
+First `scripts/07` attempt died immediately: `scripts/01` wrote the
+validation split to `data/hotpotqa_dev.jsonl`, but
+`src/data.py:load_hotpotqa("validation")` (used by scripts/06/07/08)
+looks for `data/hotpotqa_validation.jsonl`. Standardized on the
+HuggingFace split names everywhere (`hotpotqa_validation.jsonl`,
+`hotpotqa_train.jsonl`), renamed the existing file, fixed scripts/01
+and scripts/02. Commit `e4d032f`.
+
+### Sequential baseline rate
+
+With the filename fixed, `scripts/07` ran and reported **0.18 q/s →
+ETA ~11.6 h for the baseline alone** (~24 h+ for both conditions). The
+per-question cost is ~6 s: ~50 ms contriever encode, ~250 ms FAISS
+search (5.2M × 768 IndexFlatIP, all 14 cores), ~0.25 ms × 25 chunk-text
+lookups, **~5–6 s Ollama generation** (~2000-token prompt + ~50-token
+answer with `llama3.1:8b-instruct-q5_K_M`). Ollama dominates.
+
+### Parallelization attempt (and why it didn't help here)
+
+Refactored `run_eval` to support a thread pool over the per-question
+work (`n_workers` param; commit `3581823`), the idea being that several
+Ollama requests in flight at once recover a near-linear speedup if the
+Ollama server is configured with `OLLAMA_NUM_PARALLEL > 1`.
+
+It went wrong twice, then we reverted:
+
+1. **OMP Error #15** at startup: faiss and torch each bundle their own
+   `libomp` on macOS arm64, and importing faiss *before* torch crashes
+   the process. Fixed by not importing faiss at module top — torch loads
+   first via `from src.index_io import …`, and faiss loads later inside
+   `load_faiss_retriever`; the FAISS thread count is set in `main()`
+   after that, only when `n_workers > 1`.
+2. **Throughput got *worse*** with `n_workers=4` — ~0.02 q/s, ~10× worse
+   than the sequential 0.18. First suspected: FAISS OpenMP
+   oversubscription (4 Python threads × 14 OMP threads each = 56 threads
+   on 14 cores, starving Ollama). Pinned FAISS to 1 thread per worker;
+   throughput stayed bad. The real cause, from `ollama ps`: **Ollama was
+   serving with a single slot** (size 7.0 GB, context 8192) — it ignored
+   the client-side `OLLAMA_NUM_PARALLEL=4` env var, because that's read
+   by `ollama serve` at start-up, and the user's Ollama was already
+   running with the default (1 parallel slot). So the 4 client workers
+   just queued 4 requests at a serial Ollama → all the overhead of 4
+   in-flight FAISS searches + chunk lookups + thread contention, none of
+   the parallelism benefit.
+3. **The machine is at capacity.** `vm_stat` showed ~65 MB free, ~14 GB
+   inactive (reclaimable but with memory-pressure cost), and the active
+   set includes a `com.apple.Virtualization.VirtualMachine` and a
+   `unrelated-workload` dev workload — the user's other work. The
+   Python process is ~17 GB (16 GB FAISS index + ~1 GB id→idx map + the
+   contriever model). Restarting Ollama with `OLLAMA_NUM_PARALLEL=4`
+   would add ~6 GB of KV cache (4 × ~2 GB at num_ctx=8192) and risk
+   pushing the system into swap, slowing the user's other processes —
+   not worth doing unilaterally.
+
+**Resolution: reverted to sequential** (`MANDORLA_N_WORKERS=1`, the
+configuration that demonstrably works at 0.18 q/s). The baseline run
+finishes in ~12 h; `scripts/08` (Vesica-RAG, slightly more retrieval
+work per question) similar; ~24–30 h for both, then `scripts/09`. The
+`n_workers` code stays in place (94 tests, including parallel-path
+tests, all green) — if the machine later has headroom and Ollama is
+restarted with `OLLAMA_NUM_PARALLEL≥2`, `MANDORLA_N_WORKERS=N` would
+recover the speedup. For now: thorough beats fast, and not destabilizing
+the user's machine beats both.
+
+No binding decision changes — none of this touches datasets, metrics,
+baselines, the decision rule, or the prompt/decoding config. The
+generator's `num_ctx=8192` was *considered* as a memory knob to drop
+(it doesn't change outputs — prompts are ~2500 tokens, well under both
+8192 and 4096), but left as-is since we reverted to sequential.
