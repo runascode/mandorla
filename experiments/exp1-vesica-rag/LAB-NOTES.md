@@ -324,3 +324,36 @@ projection.npz            193 KB  (the 64×768 seeded Gaussian matrix)
 contriever_shards/        7.5 GB  (27 fp16 shards)
 contriever_meta.json, contriever.meta.json, box.meta.json
 ```
+
+### τ_v calibration (`scripts/06_calibrate_tau_v.py`)
+
+Dry-ran the vesica-search step on a deterministic 1000-question sample of
+HotpotQA train (seed=1337, sample-ids hash `2af9ac4c552f54ed`), collected
+the expected-intersection log-volume for all 190,000 pairwise candidates
+(190 per question × 1000), and took the 50th percentile.
+
+```
+log-volume stats over 190k pairs:
+  min  = 126.57
+  p10  = 199.88
+  p50  = 214.64   ← τ_v
+  p90  = 220.52
+  max  = 231.32
+τ_v (p50 log-volume) = 214.644   (≈ 1.65e93 in linear volume)
+```
+
+The log-volumes are large positive numbers because α=22 gives 64-D boxes
+with per-dim half-width ≈ 22 × 0.69 ≈ 15 (side ≈ 30, log(30) ≈ 3.4,
+× 64 dims ≈ 218). τ_v = 214.6 sits just below the median, so retrieval
+keeps roughly the upper half of candidate Vesicas by expected-intersection
+volume. Recorded in `index/tau_v.json` with the percentile, the sample-ids
+hash, β, seed, and the distribution stats.
+
+Calibration ran in ~4.5 min (190k box intersections in 64-D + the per-
+question contriever encode). Process exited 0.
+
+### Indices + calibration complete — eval runs next
+
+`scripts/04`, `scripts/05`, `scripts/06` all done against the full corpus.
+The slice is now unblocked for `scripts/07` (baseline run) and
+`scripts/08` (Vesica-RAG run), then `scripts/09` (scoring → RESULTS.md).
