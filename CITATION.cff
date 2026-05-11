@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use MANDORLA, please cite the position paper."
+title: "MANDORLA: A Geometric Foundation for Machine Cognition"
+authors:
+  - family-names: Patterson
+    given-names: Jacob
+    email: runascode@protonmail.com
+    website: "https://runascode.com"
+abstract: >
+  MANDORLA proposes the vesica — the almond-shaped overlap between two regions
+  of meaning — as the fundamental primitive of distributed cognition. The paper
+  is a manifesto, formal specification, and pre-registered research blueprint
+  for intersection-primitive AI, drawing together hexagonal/circle-packing
+  topology, vesica intersection retrieval, recursive Seed-Egg-Flower-Fruit
+  construction, and Markov-blanket nesting under one named architecture.
+keywords:
+  - geometric deep learning
+  - retrieval-augmented generation
+  - multi-agent systems
+  - sparse distributed memory
+  - grid cells
+  - Markov blankets
+  - compositional generalization
+  - hypergraph neural networks
+  - box embeddings
+license: CC-BY-4.0
+repository-code: "https://github.com/runascode/mandorla"
+url: "https://runascode.com/mandorla"
+version: "1.0"
+date-released: "2026-05-10"
+type: software
