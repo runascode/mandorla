@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from itertools import combinations
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Protocol, runtime_checkable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -28,6 +28,9 @@ from .box import (
 )
 from .projection import RandomProjection
 from .regions import BoxExtent, Vec
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    import faiss
 
 
 # ─── Box store (boxes per chunk_id, in 64-D) ────────────────────────────────
@@ -102,20 +105,35 @@ class BoxStore:
 @dataclass(frozen=True)
 class ScoredChunk:
     chunk_id: str
-    score: float           # cosine similarity in the baseline's space
+    score: float           # cosine similarity
+
+
+@runtime_checkable
+class DenseRetriever(Protocol):
+    """Anything that returns top-k cosine-similar chunks for a 768-D query.
+
+    Both `BaselineRetriever` (numpy reference, used in tests) and
+    `FaissDenseRetriever` (production, used by scripts 07/08) satisfy this.
+    `VesicaRetriever` is written against this Protocol so it doesn't care
+    which is plugged in.
+    """
+
+    def top_k(self, query: Vec, k: int) -> list[ScoredChunk]:
+        ...
 
 
 @dataclass
 class BaselineRetriever:
-    """Top-k cosine retrieval over a contriever-encoded corpus.
+    """Top-k cosine retrieval over a contriever-encoded corpus — numpy
+    reference implementation.
 
-    For the slice we operate in float32 and call np.argpartition for
-    efficient top-k without a full sort. FAISS is a drop-in for the
-    production-scale build (scripts/04) — this class is the reference
-    implementation and the testing surface.
+    Operates in float32, uses np.argpartition for top-k without a full
+    sort. The testing surface for retrieval logic; the production path at
+    5.2M passages uses `FaissDenseRetriever` instead (avoids holding a
+    16 GB embedding matrix when the FAISS index already has it).
 
-    Assumes embeddings are NOT pre-normalized; we normalize on query for
-    cosine similarity.
+    Assumes embeddings are NOT pre-normalized; normalizes both sides for
+    cosine.
     """
 
     embeddings: NDArray[np.float32]    # (N, 768)
@@ -140,19 +158,53 @@ class BaselineRetriever:
         if query.shape[0] != self.d:
             raise ValueError(f"query dim {query.shape[0]} != index dim {self.d}")
         q = query.astype(np.float32, copy=False)
-        # cosine = dot(q_hat, e_hat); we use unnormalized dot product over
-        # L2-normalized vectors (contriever was trained for this).
         q_norm = q / max(float(np.linalg.norm(q)), 1e-12)
         e_norms = np.linalg.norm(self.embeddings, axis=1).clip(min=1e-12)
         e_hat = self.embeddings / e_norms[:, None]
         scores = e_hat @ q_norm
-        # top-k by argpartition
         k = min(k, self.n)
         idx_part = np.argpartition(-scores, kth=k - 1)[:k]
         idx_sorted = idx_part[np.argsort(-scores[idx_part])]
         return [
             ScoredChunk(chunk_id=self.chunk_ids[int(i)], score=float(scores[int(i)]))
             for i in idx_sorted
+        ]
+
+
+@dataclass
+class FaissDenseRetriever:
+    """Top-k cosine retrieval backed by a FAISS IndexFlatIP over
+    L2-normalized vectors (built by scripts/04). Production path for the
+    5.2M-passage corpus — exact cosine, no ANN approximation, ~16 GB
+    resident.
+
+    The query is normalized before search so inner-product == cosine.
+    """
+
+    index: "faiss.Index"
+    chunk_ids: list[str]
+
+    def __post_init__(self) -> None:
+        if self.index.ntotal != len(self.chunk_ids):
+            raise ValueError(
+                f"index.ntotal {self.index.ntotal} != len(chunk_ids) "
+                f"{len(self.chunk_ids)}"
+            )
+
+    @property
+    def n(self) -> int:
+        return self.index.ntotal
+
+    def top_k(self, query: Vec, k: int) -> list[ScoredChunk]:
+        q = query.astype(np.float32, copy=False)
+        q_norm = (q / max(float(np.linalg.norm(q)), 1e-12)).reshape(1, -1)
+        k = min(k, self.n)
+        scores, idxs = self.index.search(q_norm, k)
+        scores, idxs = scores[0], idxs[0]
+        return [
+            ScoredChunk(chunk_id=self.chunk_ids[int(i)], score=float(s))
+            for s, i in zip(scores, idxs)
+            if i >= 0
         ]
 
 
@@ -201,12 +253,13 @@ class VesicaRetriever:
     """The slice's Vesica-RAG retriever.
 
     Composes:
-      - `BaselineRetriever` for the Descent step (contriever top-k points)
+      - a `DenseRetriever` for the Descent step (contriever top-k points) —
+        `BaselineRetriever` in tests, `FaissDenseRetriever` in production
       - `BoxStore` for box geometry per chunk_id
       - `RandomProjection` for query 768-D → 64-D
     """
 
-    baseline: BaselineRetriever
+    baseline: DenseRetriever
     boxes: BoxStore
     projection: RandomProjection
     beta: float = DEFAULT_BETA

@@ -7,6 +7,7 @@ exercises the full retrieve pipeline without the 5.2M-passage real corpus.
 
 from __future__ import annotations
 
+import faiss
 import numpy as np
 import pytest
 
@@ -16,6 +17,8 @@ from src.regions import BoxExtent
 from src.retrieve import (
     BaselineRetriever,
     BoxStore,
+    DenseRetriever,
+    FaissDenseRetriever,
     VesicaRetriever,
 )
 
@@ -125,6 +128,85 @@ def test_baseline_top_k_dim_check() -> None:
     br = BaselineRetriever(embeddings=embs, chunk_ids=["a", "b", "c"])
     with pytest.raises(ValueError):
         br.top_k(np.zeros(5, dtype=np.float32), k=1)
+
+
+# ─── FaissDenseRetriever ────────────────────────────────────────────────────
+
+
+def _build_faiss(embs: np.ndarray) -> faiss.Index:
+    """IndexFlatIP over L2-normalized rows — cosine via inner product."""
+    e = embs.astype(np.float32)
+    norms = np.linalg.norm(e, axis=1, keepdims=True).clip(min=1e-12)
+    e_hat = e / norms
+    idx = faiss.IndexFlatIP(e.shape[1])
+    idx.add(e_hat)
+    return idx
+
+
+def test_faiss_retriever_satisfies_protocol() -> None:
+    embs = np.eye(4, dtype=np.float32)
+    fr = FaissDenseRetriever(index=_build_faiss(embs), chunk_ids=["a", "b", "c", "d"])
+    assert isinstance(fr, DenseRetriever)
+
+
+def test_faiss_retriever_count_check() -> None:
+    embs = np.eye(3, dtype=np.float32)
+    with pytest.raises(ValueError):
+        FaissDenseRetriever(index=_build_faiss(embs), chunk_ids=["a", "b"])
+
+
+def test_faiss_retriever_returns_closest_first() -> None:
+    embs = np.array([
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.7, 0.7, 0.0],   # between a and b, closer to query than b
+    ], dtype=np.float32)
+    fr = FaissDenseRetriever(index=_build_faiss(embs), chunk_ids=["a", "b", "c"])
+    q = np.array([1.0, 0.0, 0.0], dtype=np.float32)
+    out = fr.top_k(q, k=3)
+    assert out[0].chunk_id == "a"
+    assert out[1].chunk_id == "c"
+    assert out[2].chunk_id == "b"
+
+
+def test_faiss_and_baseline_agree_on_ranking() -> None:
+    """Same data → same top-k ordering from FAISS and the numpy reference."""
+    rng = np.random.default_rng(0)
+    embs = rng.standard_normal((50, 16)).astype(np.float32)
+    ids = [f"c{i}" for i in range(50)]
+    br = BaselineRetriever(embeddings=embs, chunk_ids=ids)
+    fr = FaissDenseRetriever(index=_build_faiss(embs), chunk_ids=ids)
+    q = rng.standard_normal(16).astype(np.float32)
+    b_ids = [s.chunk_id for s in br.top_k(q, k=10)]
+    f_ids = [s.chunk_id for s in fr.top_k(q, k=10)]
+    assert b_ids == f_ids
+
+
+def test_faiss_retriever_caps_at_n() -> None:
+    embs = np.eye(3, dtype=np.float32)
+    fr = FaissDenseRetriever(index=_build_faiss(embs), chunk_ids=["a", "b", "c"])
+    out = fr.top_k(np.ones(3, dtype=np.float32), k=10)
+    assert len(out) == 3
+
+
+def test_vesica_retriever_works_with_faiss_dense() -> None:
+    """VesicaRetriever should accept a FaissDenseRetriever for descent."""
+    rng = np.random.default_rng(99)
+    n, d_768, d_box = 25, 32, 8
+    embs = rng.standard_normal((n, d_768)).astype(np.float32)
+    ids = [f"c{i}" for i in range(n)]
+    fr = FaissDenseRetriever(index=_build_faiss(embs), chunk_ids=ids)
+    projection = RandomProjection(d_in=d_768, d_out=d_box, seed=7)
+    centers = projection.project(embs)
+    half_widths = np.full_like(centers, 0.3)
+    store = BoxStore(centers=centers, half_widths=half_widths, chunk_ids=ids)
+    vr = VesicaRetriever(baseline=fr, boxes=store, projection=projection)
+    result = vr.retrieve(rng.standard_normal(d_768).astype(np.float32),
+                         k_points_used=5, k_descent=10, m_vesicas=3)
+    assert len(result.points) == 5
+    assert len(result.vesicas) <= 3
+    for p in result.points:
+        assert p.chunk_id in result.retrieved_chunk_ids
 
 
 # ─── VesicaRetriever end-to-end ─────────────────────────────────────────────
