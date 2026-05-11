@@ -5,6 +5,8 @@
 
 **[Read the paper](./mandorla.md)** · **[runascode.com/mandorla](https://runascode.com/mandorla)** · **arXiv: TBD**
 
+*Last updated: 2026-05-11 — see [Status](#status) for live state.*
+
 ---
 
 ## What is this?
@@ -29,44 +31,73 @@ If they don't hold, the paper says so in §3.3, and the negative result gets rep
 
 | Component | Status |
 |---|---|
-| Position paper (v1.0) | ✅ Published |
-| Site at runascode.com/mandorla | 🟡 Coming online |
+| Position paper v1.0 (`mandorla.md`, `tex/mandorla.tex`) | ✅ Published — 2026-05-10 |
 | arXiv preprint | 🟡 Pending endorsement |
-| Experiment 1 (Vesica-RAG) | 🔲 Planned — `experiments/01-vesica-rag/` |
-| Experiment 2 (Hex-Vote) | 🔲 Planned |
-| Experiment 3 (Curriculum) | 🔲 Planned |
-| Reference implementation | 🔲 Planned (Python 3.11+ / PyTorch / Pydantic v2) |
+| Site at runascode.com/mandorla | 🟡 Coming online |
+| **Experiment 1 — Vesica-RAG (slice)** ([`experiments/exp1-vesica-rag/`](./experiments/exp1-vesica-rag/)) | 🟡 **In progress** — corpus encoding (~5.2M passages); pipeline code complete, awaiting indices |
+| Experiment 1 — Vesica-RAG (formal, MuSiQue + 2WikiMultiHop) | 🔲 Not started — gated on slice go/no-go |
+| Experiment 2 — Hex-Vote | 🔲 Not started |
+| Experiment 3 — Mandorla Curriculum | 🔲 Not started |
 
-## Stack
+The slice screening run is what's active right now. Its full design lock is in [`experiments/exp1-vesica-rag/PRECOMMIT.md`](./experiments/exp1-vesica-rag/PRECOMMIT.md); the day-by-day log is in [`experiments/exp1-vesica-rag/LAB-NOTES.md`](./experiments/exp1-vesica-rag/LAB-NOTES.md).
 
-The implementation is Python-first:
+## How research discipline is enforced here
 
-- **Python 3.11+**, PEP-604 unions, `from __future__ import annotations`
-- **PyTorch** for any learned components
-- **Pydantic v2** for cross-process schemas (CMP messages, persisted Region payloads)
-- **`dataclasses`** for in-process structures
-- **NATS JetStream** *or* **Celery + Redis Streams** for the agent message bus
-- **Qdrant** for vector storage with payload indices for Vesica lineage
-- **`iesl/box-embeddings`** (`pip install box-embeddings`) for GumbelBox
+Every experiment in [`experiments/`](./experiments/) carries three documents and follows one engineering standard. See **[`CLAUDE.md`](./CLAUDE.md)** for the full discipline. The short version:
 
-The spec uses dataclasses for readability; production code uses Pydantic.
+- **`PRECOMMIT.md`** — binding design decisions, locked before code runs against eval data; changes only via dated amendment blocks.
+- **`LAB-NOTES.md`** — chronological observations: throughputs, calibrations, surprises, debugging journeys. Non-binding; cited by amendments.
+- **`README.md`** — operator-facing summary, defers to `PRECOMMIT.md` on every binding decision.
+
+There is also a project-level [`LAB-NOTES.md`](./LAB-NOTES.md) for repo-wide events (e.g. infrastructure shifts).
+
+## Stack (current slice)
+
+Pinned per [`experiments/exp1-vesica-rag/pyproject.toml`](./experiments/exp1-vesica-rag/pyproject.toml):
+
+- **Python 3.12** (newer versions lack ML wheels at time of writing)
+- **`uv`** for environment + dependency management
+- **PyTorch 2.11** with Apple MPS backend (Apple Silicon)
+- **`facebook/contriever-msmarco`** via `transformers` for 768-D dense retrieval
+- **`iesl/box-embeddings`** (`pip install box-embeddings`) for the GumbelBox primitive
+- **`faiss-cpu`** for the contriever index (IndexFlatIP, exact) and the 64-D box-space kNN (HNSW)
+- **`datasets`** (HuggingFace) for HotpotQA and the BeIR/hotpotqa Wikipedia corpus
+- **Ollama** running `llama3.1:8b-instruct-q5_K_M` for answer generation (decoding pinned in [`experiments/exp1-vesica-rag/Modelfile`](./experiments/exp1-vesica-rag/Modelfile) and in code; `temperature=0`, `seed=1337`)
+
+The deferred / future-work stack (agent topology for Experiment 2, training infrastructure for Experiment 3, NATS / Qdrant / Pydantic-as-schema-bus) is specified in `mandorla.md` §2.3 and §3.4 — not in scope for the current slice.
 
 ## Repository layout
 
 ```
 mandorla/
-├── mandorla.md              # The full paper (canonical text)
-├── tex/
-│   └── mandorla.tex         # arXiv LaTeX source
-├── experiments/             # Forthcoming
-│   ├── 01-vesica-rag/
-│   ├── 02-hex-vote/
-│   └── 03-curriculum/
-├── figures/                 # Diagrams (vesica, seed, fruit, K_13)
+├── README.md                    # this file
+├── CLAUDE.md                    # engineering + research-discipline standards
+├── LAB-NOTES.md                 # project-level chronological log (repo-wide events)
+├── mandorla.md                  # the full paper (canonical text)
 ├── CITATION.cff
-├── LICENSE-PAPER            # CC BY 4.0
-├── LICENSE-CODE             # MIT (when code is added)
-└── README.md
+├── LICENSE-PAPER                # CC BY 4.0
+├── LICENSE-CODE                 # MIT
+├── LICENSE                      # mirror of LICENSE-CODE
+├── tex/
+│   ├── mandorla.tex             # arXiv LaTeX source
+│   └── mandorla.pdf             # compiled paper
+└── experiments/
+    └── exp1-vesica-rag/         # 🟡 in progress
+        ├── PRECOMMIT.md         # binding design (locked 2026-05-10)
+        ├── LAB-NOTES.md         # experiment-level chronological log
+        ├── BENCHMARKS.md        # throughput / cost measurements
+        ├── README.md            # operator-facing reproduce guide
+        ├── pyproject.toml
+        ├── uv.lock
+        ├── .python-version      # 3.12
+        ├── Modelfile            # pinned Ollama config
+        ├── src/                 # Region/Vesica primitives, retrieval,
+        │                        # eval, generation, calibration
+        ├── tests/               # pytest unit tests
+        ├── scripts/             # 01..09 numbered pipeline scripts
+        ├── data/                # gitignored — HF cache, HotpotQA dumps
+        ├── index/               # gitignored — FAISS, box indices
+        └── results/             # raw per-question JSONL + RESULTS.md
 ```
 
 ## Cite
@@ -89,10 +120,10 @@ The `CITATION.cff` in this repo gives GitHub's "Cite this repository" button the
 This is, at present, a single-author research program. I welcome:
 
 - **Critical reading.** If §2.5 (the vesica-as-Markov-blanket identity) is mathematically broken, please open an issue. Falsification of a load-bearing claim is the most valuable possible contribution at this stage.
-- **Experimental collaboration.** If you have compute, retrieval infrastructure, or compositional-generalization expertise and want to co-run one of the three pre-registered experiments, open an issue tagged `experiment-01` / `02` / `03`, or email me.
+- **Experimental collaboration.** If you have compute, retrieval infrastructure, or compositional-generalization expertise and want to co-run one of the three pre-registered experiments, open an issue tagged `experiment-01` / `02` / `03`, or email.
 - **Adjacent work.** Pointers to prior art that overlap with §2.5 or §3.2's open questions are welcome via issue.
 
-Pull requests against the paper text are not currently accepted — the document is a position; revisions are by author. PRs against experiment code are welcome once the directories are populated.
+Pull requests against the paper text are not currently accepted — the document is a position; revisions are by author. PRs against experiment code are welcome.
 
 ## Contact
 
@@ -101,7 +132,7 @@ Jacob Patterson · runascode@protonmail.com · [runascode.com](https://runascode
 ## License
 
 - **Paper text** (`mandorla.md`, `mandorla.pdf`, `tex/`): [Creative Commons BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-- **Code** (when added): MIT.
+- **Code** (`experiments/`, `src/`, scripts, configs): MIT.
 
 ## Acknowledgments
 

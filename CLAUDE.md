@@ -82,20 +82,35 @@ trail.
 ### `README.md` — operator-facing summary
 
 - **One per experiment.** Lives in the experiment directory root.
+- **One at the project root** for the repo as a whole — covers the paper,
+  the experiments index, the stack in current use, and the layout.
 - **Audience:** someone (or a future agent) who wants to run this
   experiment — not someone who wants to argue with its design.
 - **Defers to PRECOMMIT.md** as the source of truth on every binding
   decision. If README disagrees with PRECOMMIT, PRECOMMIT wins; fix the
   README.
+- **Must be kept current.** A stale README is worse than no README —
+  it actively misleads. Update the affected README *in the same commit*
+  as any change that:
+  - moves an experiment between status states (planned → in progress →
+    complete / shipped / no-go)
+  - changes the canonical stack (Python version, model, retriever, …)
+  - changes the repository layout (new top-level files / dirs, renames)
+  - changes the documented reproduction command sequence
+  - publishes a new version of the paper, dataset, or results
 - **Required sections:**
   - What this is, in one paragraph, with a link to the paper section it
     implements
+  - Status (for project-level README; tabular, includes dates)
   - Setup table (corpus, models, key configs)
   - Metrics + go-no-go criteria (a summary; full rationale is in PRECOMMIT)
   - Reproduce (the exact `uv run python scripts/NN_*.py` sequence)
   - Artifacts on completion (what files must exist for the experiment to
     be "done")
   - References
+- **Last-updated marker.** Project-level READMEs carry a
+  `*Last updated: YYYY-MM-DD*` line near the top so a reader instantly
+  knows how recent the summary is.
 
 ### Other documents (optional, when they earn their place)
 
