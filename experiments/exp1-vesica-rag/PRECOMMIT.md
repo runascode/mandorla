@@ -219,7 +219,37 @@ The original engineer's three-week estimate assumed B3 (trained box head, ~4–6
 
 ## Amendments
 
-(None. The first entry, if any, goes here, dated, with a clear statement of what changed and why.)
+### Amendment 1 — α calibration: "closest-on-grid" replaces "exactly 0.05" (2026-05-10)
+
+**What changed.** B2's α-calibration clause originally read:
+
+> α is a single global scalar set so that the median pairwise expected intersection volume over a random 10k-chunk sample is ~0.05 of the median single-box volume.
+
+The amended reading is:
+
+> α is the value on a wide log-scale grid (currently `(0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 13.0, 17.0, 22.0, 30.0, 50.0)`) whose **achieved** median pairwise expected intersection volume on a random 10k-chunk sample is *closest in log-ratio* to the 0.05 target, evaluated over **1000 random pairs** with seed=1337. The chosen α and the achieved ratio are both logged in `index/box.meta.json` and surface in the run log. The achieved ratio is no longer a binding equality; only the choice procedure is binding.
+
+**Why.** Two observations from the smoke build on shard 0 (200k passages of the planned 5.2M; see `LAB-NOTES.md` 2026-05-10 entry):
+
+1. In 64-D with isotropic boxes scaled from a scalar kNN distance, the ratio metric requires per-dimension overlap of `0.05^(1/64) ≈ 0.954` to hit 0.05 exactly. This is achievable only at very large α (boxes much wider than typical inter-chunk gaps) or with much lower dimensionality. Neither is on the slice's path — 64-D is locked in PRECOMMIT.md A, and shrinking α further produces ratios `≪ 0.05`.
+2. The widened grid `(0.5–50)` showed α monotonically pushing the ratio up toward but not past ~0.04, plateauing at the grid top. This is Mandorla §3.3 F4 ("high-dimensional intersection sparsity") in action — the paper itself flagged it.
+
+The 0.05 target was a *theoretical anchor*, not a binding equality. The slice's go/no-go signal is comparison against the contriever baseline; if Vesica-RAG produces meaningful retrieval lift, the achieved α is "right enough." If it doesn't, the broader Experiment 1 picks up the α-search question with anisotropic boxes (per-dimension half-widths from local variance, not a scalar) and/or a trained box head (PRECOMMIT.md B3) — neither of which is in scope here.
+
+**Procedure change.** The grid was widened from `(0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0, 7.0, 10.0)` to `(0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 13.0, 17.0, 22.0, 30.0, 50.0)` and the pair count for ratio estimation from 200 to 1000 (smoother curve). These are recorded in `scripts/05_build_box_index.py` and in `index/box.meta.json` for every run.
+
+**Scope.** This amendment governs the *interpretation* of α calibration. It does **not** change:
+
+- The 64-D box space (PRECOMMIT.md A) — still 64-D.
+- The B2 construction (kNN-distance-scaled isotropic) — still B2.
+- The C1 Vesica→text contract — still contained-chunks, cap 10.
+- The headline / diagnostic / go-no-go thresholds — unchanged.
+
+**Triggered by.** Smoke build on shard 0 (200k passages), 2026-05-10. Logged in `LAB-NOTES.md` under that date.
+
+---
+
+(Subsequent amendments go here, dated, with a clear statement of what changed and why.)
 
 ---
 
