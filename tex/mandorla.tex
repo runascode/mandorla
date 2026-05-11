@@ -1,0 +1,717 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{authblk}
+\usepackage{abstract}
+\usepackage{parskip}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+
+% --- Hyperref setup ---
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+  pdftitle={MANDORLA: A Geometric Foundation for Machine Cognition},
+  pdfauthor={Jacob Patterson},
+  pdfkeywords={geometric deep learning, multi-agent systems, retrieval-augmented generation, sparse distributed memory, grid cells, Markov blankets, compositional generalization, hypergraph neural networks, box embeddings}
+}
+
+% --- Listings (Python) ---
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.4,0.4,0.4}
+\definecolor{codeblue}{rgb}{0.1,0.1,0.6}
+\definecolor{codered}{rgb}{0.6,0.1,0.1}
+
+\lstdefinestyle{py}{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codeblue}\bfseries,
+  commentstyle=\color{codegreen}\itshape,
+  stringstyle=\color{codered},
+  numberstyle=\tiny\color{codegray},
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{gray!40},
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4,
+  columns=fullflexible
+}
+\lstset{style=py}
+
+% --- Section formatting ---
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+
+% --- Title ---
+\title{
+  \textbf{MANDORLA:}\\
+  A Geometric Foundation for Machine Cognition\\
+  \vspace{0.3em}
+  \large A Manifesto, Specification, and Research Blueprint\\
+  for Intersection-Primitive AI
+}
+
+\author[1]{Jacob Patterson\thanks{Correspondence: \texttt{runascode@protonmail.com}; project page: \url{https://runascode.com/mandorla}; code: \url{https://github.com/runascode/mandorla}}}
+\affil[1]{Independent Researcher}
+
+\date{Version 1.0 \textemdash{} 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+Modern AI architecture is organized around the wrong primitive: sequence, hierarchy, and nearest-neighbor retrieval. This paper argues that the right primitive is the \emph{vesica}---the almond-shaped overlap of two semantic regions, from which a third region is born. We introduce \textsc{Mandorla}, a unified framework that treats intersection-as-output as a first-class operator, organizes computational units in hexagonal/circle-packing topology, grows by recursive Seed--Egg--Flower--Fruit construction, and identifies the vesica with the Markov blanket of two regions. \textsc{Mandorla} draws on geometric deep learning (Bronstein et al.), the Tolman--Eichenbaum Machine (Whittington et al.), the Thousand Brains Project, the Kanerva lineage of sparse distributed memory, box embeddings, hypergraph and simplicial neural networks, and the geometrized Free Energy Principle. The paper specifies the framework formally, identifies the vesica-as-Markov-blanket correspondence as a load-bearing structural claim, and proposes three falsifiable experiments---\textsc{Vesica-RAG} on multi-hop QA, \textsc{Hex-Vote} on multi-agent synthesis benchmarks, and a \textsc{Mandorla Curriculum} for compositional generalization---each with pre-registered predictions and an explicit failure mode. The geometry is on trial.
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} geometric deep learning; multi-agent systems; retrieval-augmented generation; sparse distributed memory; grid cells; Markov blankets; compositional generalization; hypergraph neural networks; box embeddings.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\begin{quote}
+\textbf{Thesis.} The fundamental operation of cognition is not the application of a function to a representation, but the \emph{construction of a new region at the intersection of two existing ones}. This document argues that modern AI has organized itself around the wrong primitive---sequence, hierarchy, nearest-neighbor---and that the right primitive is the \textbf{vesica}: the almond-shaped overlap of two circles of meaning, from which a third thing is born. \textsc{Mandorla} is the first attempt to make that primitive explicit, technical, and falsifiable, drawing together hexagonal/circle-packing topology, vesica intersection retrieval, recursive Seed$\rightarrow$Egg$\rightarrow$Flower$\rightarrow$Fruit construction, and Markov-blanket nesting under one named architecture. The geometry is not decorative. It is claiming to be load-bearing, and the program below exists to determine whether it actually bears the load.
+\end{quote}
+
+\section{Part I --- Manifesto}
+
+\subsection{The Wrong Turn}
+
+Modern artificial intelligence has taken a tree-shaped wrong turn, and most of its current pathologies follow from it.
+
+Consider what the working stack actually looks like, beneath the marketing. A transformer is, in its abstract form, a complete graph on tokens---attention is structurally $K_n$---but it is trained on tokens-as-sequences and queried via autoregressive decoding, so the latent geometry collapses to a chain. Agentic systems are hierarchies of tools and supervisors. File systems are trees. Scaling laws are power laws over a single linear axis: parameters, data, compute. Prompt engineering produces nested instructions. Chain-of-thought is sequential. Mixture-of-experts gates by routing, not overlap. Retrieval-augmented generation indexes by nearest neighbor, returning the closest \emph{point} in embedding space and not the \emph{region} of agreement between several concepts. The substrate is, top to bottom, treelike.
+
+This costs us. Compositional generalization remains weak: Kim and Linzen's COGS benchmark famously reported near-perfect in-distribution Transformer accuracy (96--99\%) collapsing to 16--35\% on systematic generalization splits, with high variance across seeds. (Csord\'as, Irie \& Schmidhuber 2021 later raised this baseline to $\sim$81\% with simple architectural tricks---relative position embeddings, no early stopping---demonstrating both the fragility of the original gap and that it can be partially closed without changing the core primitive.) Multi-hop reasoning benchmarks like HotpotQA, 2WikiMultiHopQA, and MuSiQue (Trivedi et al., TACL 2022) show large human--model gaps that grow as the number of compositional hops increases. The very existence of ``chain of thought'' as a separate scaffold is a tell: the substrate is not natively recursive over its own representations, so we bolt recursion on top by making the model write in English about what it just thought.
+
+A different way to put this is that current systems are very good at \emph{containment} (this token belongs to that context, this concept is a subclass of that one) and very bad at \emph{intersection} (what is the joint content of these two regions of meaning?). Containment is hierarchical; it nests. Intersection is geometric; it overlaps. The math we have invested in for the last ten years---hierarchical attention, tree-structured prompts, taxonomic ontologies, dendrograms of clusters---is the math of containment. The mathematics that geometric deep learning, topological deep learning, sparse distributed memory, and entorhinal grid coding all point toward---but which has not yet been unified---is the mathematics of intersection.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.3cm}>{\raggedright\arraybackslash}p{3.2cm}>{\raggedright\arraybackslash}p{4.5cm}>{\raggedright\arraybackslash}p{3.5cm}}
+\toprule
+\textbf{Representation} & \textbf{Geometric Primitive} & \textbf{Intersection Operator} & \textbf{Failure Mode} \\
+\midrule
+Point Vector & Single coordinate $v \in \mathbb{R}^d$ & None (cosine similarity only) & Weak compositional generalization \\
+Gaussian Embedding & Density $\mathcal{N}(\mu, \Sigma)$ & KL divergence; no closed-form intersection & Boundary blur, gradient diffusion \\
+Box Embedding & Hyperrectangle $[x_m, x_M] \subset \mathbb{R}^d$ & $[\max(x_m, y_m), \min(x_M, y_M)]$ & Hard-boundary gradient collapse \\
+\textbf{\textsc{Mandorla} Vesica} & \textbf{Persistent overlap region $V(A, B)$} & \textbf{First-class node with lineage, citations, promotion} & \textbf{High-dimensional intersection sparsity} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{What Geometry Knows}
+
+The reason intersection deserves the central seat is that, when you ask the universe what shape distributed cognition has to take, the universe keeps returning the same answer, in three independent voices.
+
+\textbf{Mathematics.} Hales (2001) proved the honeycomb conjecture: any partition of the plane into regions of equal area has perimeter at least that of the regular hexagonal tiling. This is not aesthetics; it is a theorem. T\'oth (1942) and Hales (1999) established that the densest packing of equal disks in the plane achieves density $\pi/\sqrt{12} \approx 0.9069$, attained uniquely by the hexagonal arrangement. The kissing number---the maximum number of unit spheres that can simultaneously touch a central unit sphere without overlap---is exactly 6 in two dimensions and exactly 12 in three (Newton--Gregory, proved by Sch\"utte and van der Waerden 1953). Six is therefore not an arbitrary cardinality; it is the maximum number of distinct things that can directly touch one thing in a plane. Twelve is its three-dimensional analogue. The Flower of Life---six unit circles around one, each passing through the center of its two neighbors---is the planar witness to those theorems. Buckminster Fuller's \emph{Synergetics} (1975) generalized the same packing into the Isotropic Vector Matrix, the unique three-dimensional lattice in which every node is equidistant from its twelve nearest neighbors.
+
+\textbf{Neuroscience.} Hafting, Fyhn, Molden, Moser \& Moser (\emph{Nature} 2005) showed that the dorsocaudal medial entorhinal cortex contains grid cells whose firing fields form a triangular lattice---a hexagonal tessellation---covering the spatial environment. Sargolini et al.\ (2006) extended this to conjunctive position--direction--velocity coding. Doeller, Barry \& Burgess (2010) found grid-cell signatures in human entorhinal cortex during navigation. Critically, Constantinescu, O'Reilly \& Behrens (\emph{Science} 2016) showed that the same hexagonal six-fold-symmetric code organizes abstract conceptual knowledge: humans navigating a continuous two-dimensional concept space (bird shapes parameterized by leg-and-neck length) produce hexagonal fMRI signatures in entorhinal cortex and ventromedial prefrontal cortex. Whittington et al.\ (\emph{Cell} 2020), the Tolman--Eichenbaum Machine, gave a generative-model account of how factorized structure $\times$ sensory conjunctions produce both place cells and the full menagerie of entorhinal cell types---grid, band, border, object-vector---and how this same machinery generalizes to non-spatial relational tasks. Banino et al.\ (\emph{Nature} 2018) demonstrated that hexagonal grid-like representations emerge in deep reinforcement-learning agents trained to path-integrate, and that those agents exhibit shortcut-finding behavior exceeding the human baseline in their navigation environments. The brain's solution to ``represent any space, real or conceptual'' is hexagonal, and it is reproducible in silico.
+
+\textbf{Logic and diagram.} Lemanski (\emph{Logica Universalis} 2019), in \emph{Logic Diagrams, Sacred Geometry and Neural Networks}---to my knowledge the only peer-reviewed paper to use those three terms in a single title---observes that early-modern logic diagrams (Vives, Alsted, Weigel, Lange, Lambert, Euler) repeatedly converge on vesica-piscis and Venn-style overlap forms, and that this is not coincidence: both spiritual symbols and logic diagrams ``focus on the intersection or conjunction of two or more entities.'' The diagrammatic intuition that a proposition lives at the overlap of subject and predicate is older than predicate logic itself, and it is the direct ancestor of every set-theoretic model, every Venn diagram, and every Gaussian-mixture-as-Venn cartoon you have ever drawn on a whiteboard.
+
+These are three independent witnesses converging on the same claim: the natural shape of distributed cognition is a packing of overlapping regions, and the natural primitive is the overlap. Bronstein, Bruna, Cohen \& Veli\v{c}kovi\'c, in \emph{Geometric Deep Learning: Grids, Groups, Graphs, Geodesics, and Gauges} (arXiv:2104.13478), made the engineering case that imposing the right geometric prior on a neural architecture is what makes the difference between intractable high-dimensional learning and feasible learning. \textsc{Mandorla} accepts that case in full, and pushes one step further: the right prior is not only equivariance under a group, but \textbf{generation by intersection}.
+
+\subsection{The Mandorla Move}
+
+The almond-shaped region where two circles of equal radius meet, each passing through the other's center, has a name in art history: it is the \emph{mandorla} in Christian iconography, the \emph{vesica piscis} in geometry. Its proportions are exact: the ratio of its long axis to its short axis is $\sqrt{3}:1$, and the equilateral triangle whose vertices are the two circle centers and either pointed end of the almond is hidden inside the figure as a structural skeleton. This figure has been doing iconographic work in human cultures for 2,500 years for a reason that has nothing to do with mysticism: it is the \emph{minimum non-trivial cognitive event}. Two regions overlap. From their overlap, a third region is born---a region that did not exist before, whose properties are determined by but not reducible to either parent.
+
+This is the move \textsc{Mandorla} names. In modern ML we have many ways of representing a region of meaning. We have point embeddings (every concept is a vector). We have Gaussian embeddings (Vilnis \& McCallum 2014; Athiwaratkun \& Wilson 2017). We have box embeddings (Vilnis, Li, Murty \& McCallum, ACL 2018; Li et al.\ ICLR 2019; Dasgupta et al.\ NeurIPS 2020), where a concept is an axis-aligned hyperrectangle and containment models entailment. We have hyperdimensional / vector-symbolic architectures (Kanerva 2009; Kleyko et al.\ arXiv:2111.06077 / 2112.15424). We have sparse distributed memory (Kanerva 1988), shown to be approximated by transformer attention under realistic data conditions (Bricken \& Pehlevan, NeurIPS 2021). We have Kanerva Machines (Wu, Wayne, Graves \& Lillicrap, ICLR 2018) and their dynamic and product variants. We have hypergraph neural networks (Feng et al., AAAI 2019), simplicial and cellular networks (Bodnar, Frasca, Wang, Otter, Mont\'ufar, Li\`o \& Bronstein, ICML 2021; NeurIPS 2021), and sheaf neural networks (Hansen \& Gebhart 2020; Bodnar et al.\ 2022).
+
+What we do not have, in any of these, is a \emph{first-class intersection-as-output} operator. Box embeddings come closest---the intersection of two axis-aligned boxes is itself an axis-aligned box, computable by per-dimension max/min---but the intersection is treated as a probability or volume to be measured, not as a new region with its own identity, lineage, and capacity to participate in further intersections. HDC bundling produces a kind of intersection-by-superposition, but the bundle is not stored as a named entity; it is just a vector. RAG retrieves the closest point. GraphRAG (Edge et al.\ 2024, designed for query-focused summarization) and HippoRAG (Guti\'errez et al.\ NeurIPS 2024) retrieve a community. None of these treat the overlap \emph{itself} as a memory cell.
+
+The \textsc{Mandorla} move is to name the overlap, store it, and let it serve as the center of further overlaps. Recursive thought \emph{is} recursive vesica construction: every new idea is born at the intersection of two existing ideas, and that new idea then becomes a center for further intersections. This is the Hofstadterian frame at the right level of abstraction---strange loops as the geometric self-recursion of an intersection operator over its own outputs. It is also where the current ML literature has the least vocabulary, and therefore where \textsc{Mandorla} has the most to add.
+
+\subsection{Three Theses}
+
+\textbf{Thesis 1 --- Geometric Primacy.} The optimal substrate for distributed cognition is hexagonal/circle-packing topology. This is where energy-minimization (Hales 2001), maximal overlap of equal-radius regions (vesica-piscis kissing geometry), and uniform 6-connectivity (kissing number in 2D) coincide. The biological evidence---grid cells in entorhinal cortex coding both physical and conceptual space (Hafting et al.\ 2005; Constantinescu et al.\ 2016; Whittington et al.\ 2020)---and the engineering evidence---that grid-like representations spontaneously emerge in path-integration networks (Banino et al.\ 2018)---together suggest that this is not a contingent biological choice but a structural attractor that any sufficiently efficient distributed cognitive system will tend toward. The Thousand Brains Project (Clay, Leadholm \& Hawkins, arXiv:2412.18354; Leadholm, Clay, Knudstrup, Lee \& Hawkins, arXiv:2507.04494) has made the parallel case that cortical-column-like repeated units, voting through a Cortical Messaging Protocol, are the right unit of computation. \textsc{Mandorla} accepts that proposal and adds: the graph among those units is hexagonal.
+
+\textbf{Thesis 2 --- Connection over Hierarchy.} The fundamental relation between cognitive units is \emph{overlap}, not containment. Trees are special cases of intersection patterns; intersections are not special cases of trees. A parent-child edge is the degenerate vesica where one circle is inside the other; every intersection topology contains the tree case as a limit. The reverse is not true. This thesis is why \textsc{Mandorla} explicitly retires hierarchical multi-agent framings---agentic stacks built around supervisors and tools impose the structural assumption we are rejecting. Connection-first is also why hypergraph and simplicial-complex methods (Feng et al.\ 2019; Bodnar et al.\ 2021) are natural cousins to \textsc{Mandorla}: a hyperedge is a multi-way overlap, and a $k$-simplex is the algebraic shadow of $(k+1)$ regions sharing a common interior. \textsc{Mandorla} differs from those methods by giving the overlap a \emph{persistent identity} rather than treating it as just another edge.
+
+\textbf{Thesis 3 --- Recursive Construction.} Cognition is not the application of operations to representations; it is the \emph{geometric construction of new representations at the intersections of old ones}. Thought is the recursive drawing of new circles. This thesis is the heart of the document. Most learning-as-optimization frameworks treat representations as fixed targets to be fit; even continual-learning systems mostly extend an existing representational space rather than generate a new region from the interaction of two existing ones. Self-organizing curricula like FractalNet (Larsson et al.\ 2017) repeat a pattern at multiple scales, but they do not place new structure at the geometric intersection of prior structure. The Symbolica/DeepMind paper \emph{Categorical Deep Learning} (Gavranovi\'c, Lessard, Dudzik, von Glehn, Ara\'ujo \& Veli\v{c}kovi\'c, ICML 2024) sketches an algebraic framing of architectures via monads in a 2-category of parametric maps; \textsc{Mandorla} can be read as proposing a specific such monad, the ``vesica monad,'' whose unit promotes a region to its own singleton intersection and whose multiplication composes intersections---but we leave the categorical formalization as open territory (\S 3.2). The empirical claim that matters here is simpler: a learning system that is \emph{forced to predict and store the intersection of every pair of co-occurring concepts} will compositionally generalize better than one that only predicts the next token. We make this falsifiable in \S 3.1.
+
+\subsection{The Lineage}
+
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.5cm}>{\raggedright\arraybackslash}p{5.5cm}>{\raggedright\arraybackslash}p{5.5cm}}
+\toprule
+\textbf{Lineage} & \textbf{Contributors} & \textbf{Mechanism Inherited} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Lineage} & \textbf{Contributors} & \textbf{Mechanism Inherited} \\
+\midrule
+\endhead
+Logic \& Diagrammatics & Lemanski (2019) & Vesica-piscis as logical conjunction; only peer-reviewed sacred-geometry/NN paper \\
+Geometric Deep Learning & Bronstein, Bruna, Cohen, Veli\v{c}kovi\'c (2021) & Geometric prior as architectural commitment \\
+Sensorimotor Cognition & Hawkins; Clay, Leadholm \& Hawkins (2024); Leadholm et al.\ (2025) & Cortical-column unit; Cortical Messaging Protocol \\
+Sparse Distributed Memory & Kanerva (1988, 2009); Wu, Wayne, Graves \& Lillicrap (2018); Bricken \& Pehlevan (2021) & High-dimensional associative memory; attention-as-SDM \\
+Relational Grid Coding & Hafting et al.\ (2005); Doeller, Barry \& Burgess (2010); Constantinescu, O'Reilly \& Behrens (2016); Whittington et al.\ (2020); Banino et al.\ (2018) & Hexagonal grid codes for physical and conceptual space \\
+Topological Deep Learning & Bodnar, Frasca, Wang, Otter, Mont\'ufar, Li\`o, Bronstein (ICML 2021; NeurIPS 2021); Hansen \& Gebhart (2020) & Message passing on simplicial/cellular complexes; sheaf structure \\
+Box Embeddings & Vilnis, Li, Murty \& McCallum (2018); Li et al.\ (2019); Dasgupta et al.\ (2020) & Differentiable region intersection \\
+Hypergraph Retrieval & Feng et al.\ (HGNN, AAAI 2019); Chien et al.\ (AllSet, ICLR 2022); Luo et al.\ (HyperGraphRAG, 2025); Feng et al.\ (Hyper-RAG, 2025); Hu et al.\ (Cog-RAG, AAAI 2026) & Multi-way relational retrieval \\
+Free Energy \& Information Geometry & Friston (2019); Parr, Da Costa \& Friston (2020); Possati (2025) & Markov blankets as conditional-independence boundaries; continuous blanket density \\
+Categorical Deep Learning & Gavranovi\'c, Lessard, Dudzik, von Glehn, Ara\'ujo, Veli\v{c}kovi\'c (2024) & Algebraic framing of architectures via monads on parametric maps \\
+Recursive Self-Reference & Hofstadter (1979, 2007) & Strange loops; cognition as self-applying structure \\
+Spatial Cognition & Fuller (1975); Alexander (1977, 2002--4) & Isotropic Vector Matrix; centers reinforcing centers; pattern language \\
+Geometry of Concepts & G\"ardenfors (2000) & Cognition as operations on convex regions of quality dimensions \\
+Information Integration & Tononi et al.\ (2004--); Albantakis et al.\ (IIT 4.0, 2023) & $\Phi$ as falsification metric in \S 3.2 \\
+\bottomrule
+\end{longtable}
+
+If \textsc{Mandorla} dies, it should die as a falsified specific synthesis of these. If it lives, it should live by passing the experiments in \S 3.1.
+
+\subsection{Where This Fails}
+
+\textsc{Mandorla} is not a theory of consciousness. It does not require any metaphysical commitment. It does not say that brains are sacred-geometric in any literal or panpsychist sense. The Flower of Life vocabulary is \textbf{load-bearing engineering nomenclature}, chosen because it is the most compressed visual scaffold for a particular family of generative graph constructions. We are explicitly \textbf{not} invoking Drunvalo Melchizedek, Mer-Ka-Ba field activation, Atlantis, a 13-dimensional human energy field, the ``Christ consciousness grid,'' or any related claims. We are aware those claims circulate in the wider cultural ecology of these symbols. They are not ours. The specific use of ``sacred geometry'' terminology in this document is exactly the use Lemanski (2019) gives it: a family of diagrammatic forms that have been independently rediscovered in logic, neuroscience, and mathematics, whose convergence is interesting and whose names are convenient.
+
+The geometry is metaphorical scaffolding only insofar as the engineering it inspires fails to produce predictions. If the experiments in \S 3.1 do not show the predicted improvements, then the metaphor was decorative, \textsc{Mandorla} was wrong, and we should report it as such. If they do show the predicted improvements, then the metaphor was a useful compressor of a genuine empirical regularity, and the engineering was the point. The author commits, in advance, to the second-order-cybernetic discipline of publishing the negative result if it lands. The falsifiability conditions are stated in \S 3.3. Read those before you decide whether to take the rest seriously.
+
+\section{Part II --- The Mandorla Specification}
+
+\subsection{Primitives}
+
+We define the primitives in order of construction. Each primitive is given (a) a sentence-length intuition, (b) a formal characterization, (c) implementation candidates already present in the literature, and (d) the relation it bears to neighbors in the ontology.
+
+\begin{verbatim}
+       +----------+                +----------+
+       | Region A |                | Region B |
+       +-----+----+                +----+-----+
+             |                          |
+             +----------+    +----------+
+                        v    v
+                    +----------+
+                    | V(A, B)  |  <- the vesica: their intersection,
+                    +-----+----+     promoted to a first-class region
+                          |
+                          v
+                    participates in further intersections
+\end{verbatim}
+
+\subsubsection*{The Vesica}
+
+\textbf{Intuition.} The region of high mutual content between two semantic regions. The ``what we both mean'' surface.
+
+\textbf{Formal.} Given two regions $A, B$ in some embedding space, each defined by a center $c_A, c_B$ and an extent (a box, a radius, an SDM hard-sphere, or an HDC binding-bundle), the Vesica $V(A, B)$ is a new region whose support is the intersection of the supports of $A$ and $B$, whose center is the centroid of that intersection, and whose extent is the volume of the intersection. Crucially, $V(A, B)$ is itself a Region in the same type universe as $A$ and $B$: it can participate in further intersections.
+
+\textbf{Implementation candidates.}
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Box embeddings} (Vilnis et al.\ 2018; Li et al.\ 2019; Dasgupta et al.\ 2020). Two axis-aligned boxes $A = [x_A^\wedge, x_A^\vee]$ and $B = [x_B^\wedge, x_B^\vee]$ intersect in another axis-aligned box with corners $[\max(x_A^\wedge, x_B^\wedge), \min(x_A^\vee, x_B^\vee)]$, non-empty iff this is well-formed in every dimension. To make this differentiable when the intersection is empty or near-empty, \textbf{Dasgupta, Boratko, Zhang, Vilnis, Li \& McCallum (NeurIPS 2020, arXiv:2010.04831)} replace deterministic min/max with expectations under Gumbel distributions: lower corners are drawn from $\mathrm{MaxGumbel}(\mu^\wedge, \beta)$ (max-stable), upper corners from $\mathrm{MinGumbel}(\mu^\vee, \beta)$ (min-stable). By Lemma 1 of that paper, the family is closed under min and max via log-sum-exp (``Gumbel softplus''), and the expected per-dimension intersection side length has the closed form
+
+  \[ \mathbb{E}[\mathrm{side}_j] \approx \beta \cdot \mathrm{softplus}\!\left(\frac{\min_t \mu^{t,\vee}_j - \max_t \mu^{t,\wedge}_j}{\beta}\right) \]
+
+  where $\mathrm{softplus}(z) = \ln(1 + e^z)$ and $\beta > 0$ is a global temperature. The expected intersection volume is the product of these expected side lengths across dimensions. As $\beta \to 0$ this recovers hard-box volume; as $\beta \to \infty$ it over-smooths. This is the cleanest substrate for \textsc{Mandorla}'s first implementation; the canonical PyTorch+TensorFlow library is the McCallum-lab \texttt{iesl/box-embeddings} package (Chheda et al., EMNLP 2021 demo, arXiv:2109.04997; \texttt{pip install box-embeddings}), which exposes \texttt{GumbelBoxTensor} directly.
+  \item \textbf{HDC bundling + thresholding} (Kanerva 2009; Kleyko et al.\ arXiv:2111.06077). The element-wise majority of two high-dimensional binary vectors is a ``noisy AND'' approximating intersection, with predictable capacity in the Plate / Kanerva calculus. Cheap, hardware-friendly, lossy.
+  \item \textbf{SDM hard-sphere intersection} (Kanerva 1988; Bricken \& Pehlevan NeurIPS 2021). Two hard-spheres in $\{0,1\}^d$ intersect in a region whose Hamming-radius geometry is well-characterized.
+  \item \textbf{Topological persistence on the union of two $\varepsilon$-neighborhoods.} Borrowed from Bodnar et al.\ (ICML 2021; NeurIPS 2021); use the persistent 1-cell of the union as the witness of overlap.
+\end{enumerate}
+
+\textbf{Relation.} A Vesica is the smallest non-trivial \textsc{Mandorla} object. The empty intersection is degenerate (no Vesica spawns); the maximum-overlap case ($A = B$) is also degenerate (the Vesica collapses to its parent).
+
+\subsubsection*{The Seed}
+
+\textbf{Intuition.} One region in the middle, six around it, each adjacent pair sharing a Vesica with the central region and with its two neighbors. The Flower of Life's Seed of Life configuration---$1 + 6 = 7$ circles.
+
+\textbf{Formal.} A Seed $S$ is a configuration of one core region $R_{\text{core}}$ and six petal regions $\{P_1, \ldots, P_6\}$ arranged with hexagonal symmetry around the core, such that:
+
+\begin{itemize}[leftmargin=*]
+  \item Each petal $P_i$ shares a non-empty Vesica $V(R_{\text{core}}, P_i)$ with the core.
+  \item Each adjacent pair $(P_i, P_{(i \bmod 6) + 1})$ shares a non-empty Vesica.
+  \item Non-adjacent petal pairs need not intersect: $V(P_i, P_j)$ may be empty for $|i-j| \notin \{1, 5\}$.
+\end{itemize}
+
+\begin{verbatim}
+                 P1
+              /     \
+           P6        P2
+            |  Rcore  |
+           P5        P3
+              \     /
+                 P4
+\end{verbatim}
+
+\textbf{Why six.} Six is the kissing number in 2D---the maximum number of unit circles that can simultaneously touch a unit circle without mutually overlapping (T\'oth 1942; Hales 1999). It is also the firing periodicity of grid cells (Hafting et al.\ 2005) and the conceptual hexagonal-symmetry signature in Constantinescu et al.\ (2016). It is the natural cap on direct-neighborhood cardinality in a planar layout.
+
+\textbf{Empirical resonance.} Six is also the empirically observed sweet spot for multi-agent specialist councils in the literature on LLM debate and ensemble methods, though that observation is folkloric rather than a theorem and we treat it as suggestive.
+
+\textbf{Relation.} A Seed is a single shell of the Flower of Life. Maps to: Thousand Brains cortical-column voting circle (Clay et al.\ 2024), Banino's hexagonal grid response, a 7-agent multi-agent debate arrangement.
+
+\subsubsection*{The Egg}
+
+\textbf{Intuition.} The Seed plus its six inter-petal Vesicas, promoted to first-class regions. The configuration where the overlaps between adjacent Seed petals are no longer ephemeral but stored as named nodes with their own lineage and capacity.
+
+\textbf{Formal.} An Egg $E$ is a Seed $S$ together with the six promoted inter-petal Vesicas. Cardinality: $1$ core $+ 6$ petals $+ 6$ promoted Vesicas $= \mathbf{13}$ \textbf{nodes}.
+
+\textbf{Why 13.} This is exactly the cardinality of the Fruit of Life, the 13 circles obtained by selecting the central circle and the six ``outer'' circles of the next ring of the Flower of Life. It is the same 13 vertices that Metatron's Cube draws as a complete graph (78 edges, $\binom{13}{2}$). The fact that the Egg construction lands on 13 is not coincidence; it is forced by the geometry. We make this load-bearing in the next two definitions.
+
+\subsubsection*{The Flower}
+
+\textbf{Intuition.} The Egg recursed once: every newly born Vesica becomes the center of its own Seed.
+
+\textbf{Formal.} A Flower $F$ is the union of the Egg with a new Seed grown around each of its promoted Vesicas. In the canonical 2D embedding the visible cardinality is 19 nodes (the standard 19-circle Flower of Life diagram); in the actual computational graph the Flower extends to whatever recursion depth is supported, and each Seed brings its own potential Egg. The recursion is the generative rule.
+
+\textbf{Implementation note.} The Flower is best stored not as a fixed graph but as a \emph{generative process} over a graph of Regions: the recursion depth is a parameter, the spawning of new Seeds is conditional on Vesica density and persistence (see \S 2.4 step 4), and consolidation (step 7) prunes branches that fail to earn their cost.
+
+\subsubsection*{The Fruit}
+
+\textbf{Intuition.} Council mode. The 13 vertices of the Egg, taken with full pairwise connectivity.
+
+\textbf{Formal.} A Fruit $F^*$ is a 13-region complete-graph configuration. Total edges: $\binom{13}{2} = 78$. This corresponds to Metatron's Cube, in which all 13 circle-centers of the Fruit of Life are joined by all 78 line segments. Drawn this way, the figure contains projections of all five Platonic solids---a fact that is mathematically genuine and was the original motivation for Renaissance interest in the figure.
+
+\textbf{Use.} When a query is high-stakes enough to warrant full mesh deliberation, \textsc{Mandorla} invokes the Fruit and runs Metatron's Operator over it.
+
+\subsubsection*{Metatron's Operator}
+
+\textbf{Intuition.} Full-mesh attention/voting over the 13 nodes of a Fruit.
+
+\textbf{Formal.} Given a Fruit $F^* = \{V_1, \ldots, V_{13}\}$, Metatron's Operator is
+
+\[ M(F^*) = \mathrm{Aggregate}\!\left(\{\mathrm{Attend}(V_i, V_j) : i \neq j\}\right) \]
+
+where Attend is a standard scaled-dot-product attention over Region representations,
+
+\[ \mathrm{Attend}(V_i, V_j) = \mathrm{softmax}\!\left(\frac{Q_i K_j^\top}{\sqrt{d}}\right) V_j^{\mathrm{val}} \]
+
+and Aggregate is a votes-weighted aggregation over the 13 outputs. This is exactly $K_{13}$ attention. Cost: $13 \times 12 = 156$ directed attention pairs, or 78 undirected. Cheap. Used selectively; the per-cycle default is Seed-mode (\S 2.4).
+
+\subsection{The Mandorla Memory Architecture}
+
+A \textsc{Mandorla} memory is a directed multigraph whose nodes are Regions and whose edges record lineage and co-retrieval. The interface below is given in Python, using Pydantic models for runtime-validated I/O and dataclasses where mutability matters. This is the reference interface that Experiment 1 (\S 3.4) implements first.
+
+\begin{lstlisting}
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Literal, Optional, Protocol, TypeAlias
+from uuid import UUID
+
+import numpy as np
+from numpy.typing import NDArray
+from pydantic import BaseModel, ConfigDict, Field
+
+# Aliases
+ULID: TypeAlias = str                       # sortable opaque id
+Vec:  TypeAlias = NDArray[np.float32]       # d-dim embedding
+
+# Extents (the geometric body of a Region)
+
+class BoxExtent(BaseModel):
+    """Axis-aligned hyperrectangle."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    kind: Literal["box"] = "box"
+    min_corner: Vec
+    max_corner: Vec
+
+class BallExtent(BaseModel):
+    """L2 ball."""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    kind: Literal["ball"] = "ball"
+    radius: float = Field(gt=0)
+
+class SDMExtent(BaseModel):
+    """Sparse-distributed-memory hard-sphere in {0,1}^d."""
+    kind: Literal["sdm"] = "sdm"
+    hard_radius: int = Field(ge=0)
+
+Extent: TypeAlias = BoxExtent | BallExtent | SDMExtent
+
+# Lineage and metadata
+
+@dataclass
+class Lineage:
+    parents: Optional[tuple[ULID, ULID]] = None   # None for primordial
+    depth: int = 0                                # 0 for primordial; +1 per vesica
+
+@dataclass
+class RegionMeta:
+    overlap_history: list[float] = field(default_factory=list)
+    co_retrieval_count: int = 0
+    promotion_score: float = 0.0
+
+# Region (a node in the memory graph)
+
+@dataclass
+class Region:
+    id: ULID
+    center: Vec
+    extent: Extent
+    birth_time: float
+    lineage: Lineage = field(default_factory=Lineage)
+    citations: set[ULID] = field(default_factory=set)
+    meta: RegionMeta = field(default_factory=RegionMeta)
+
+    def is_primordial(self) -> bool:
+        return self.lineage.parents is None
+
+@dataclass
+class Vesica(Region):
+    """A Region whose parents are guaranteed non-null."""
+    def parent_ids(self) -> tuple[ULID, ULID]:
+        assert self.lineage.parents is not None, "Vesica must have two parents"
+        return self.lineage.parents
+
+# Compositional configurations (Seed -> Egg -> Fruit)
+
+@dataclass
+class Seed:
+    core: Region
+    petals: tuple[Region, Region, Region, Region, Region, Region]   # exactly 6
+
+    def __post_init__(self) -> None:
+        if len(self.petals) != 6:
+            raise ValueError(f"Seed requires 6 petals; got {len(self.petals)}")
+
+@dataclass
+class Egg:
+    seed: Seed
+    vesicas: tuple[Vesica, Vesica, Vesica, Vesica, Vesica, Vesica]  # 6 vesicas
+
+    def __post_init__(self) -> None:
+        if len(self.vesicas) != 6:
+            raise ValueError(f"Egg requires 6 promoted vesicas; got {len(self.vesicas)}")
+
+    def all_nodes(self) -> tuple[Region, ...]:
+        return (self.seed.core, *self.seed.petals, *self.vesicas)   # 1+6+6 = 13
+
+@dataclass
+class Fruit:
+    vertices: tuple[Region, ...]   # length 13; full K_13 connectivity implicit
+
+    def __post_init__(self) -> None:
+        if len(self.vertices) != 13:
+            raise ValueError(f"Fruit requires 13 vertices; got {len(self.vertices)}")
+
+    @property
+    def edge_count(self) -> int:
+        return 78   # binomial(13, 2)
+\end{lstlisting}
+
+The store exposes five operations. Their signatures are part of the spec; the implementation choice (box / ball / SDM / hybrid) is decided by the experiment in \S 3.1.
+
+\begin{lstlisting}
+class MandorlaStore(Protocol):
+    def write(self, region: Region) -> ULID:
+        """Allocate an id, insert into the index, return the id. Idempotent on
+        identical centers/extents up to epsilon."""
+
+    def intersect(self, a: Region, b: Region) -> Optional[Vesica]:
+        """Compute geometric intersection of a.extent and b.extent. If empty
+        (or, under GumbelBox, with expected volume below threshold), return None.
+        Otherwise produce a Vesica with:
+          center  = centroid of the intersection
+          extent  = the intersection itself
+          lineage = Lineage(parents=(a.id, b.id), depth=max(a.depth, b.depth)+1)
+        The returned Vesica is *not yet persisted*; call promote() to persist."""
+
+    def promote(self, vesica: Vesica) -> ULID:
+        """Persist a Vesica as a first-class Region: write() it and register
+        lineage pointers in both parents' citations. Promotion is the
+        *learning event* - Hebbian for regions of meaning."""
+
+    def walk(self, query: Vec, depth: int) -> "Subgraph":
+        """From the regions whose centers are nearest to `query`, recursively
+        follow lineage edges and Vesica links for `depth` steps.
+
+        1-hop  -> regions containing the point
+        2-hop  -> Vesicas of those regions
+        3-hop  -> Vesicas of Vesicas (i.e. reasoning chains)"""
+
+    def vote(self, council: Fruit) -> "Distribution":
+        """Run K_13 attention via Metatron's Operator over the 13 region
+        representations; return a softmax distribution over outputs."""
+\end{lstlisting}
+
+The architecture is \textbf{interface-specified, not implementation-specified}. The substrate could be box embeddings, HDC, SDM, or a hybrid; the experimental program in Part III will choose.
+
+\subsection{The Mandorla Agent Topology}
+
+The communication graph of a \textsc{Mandorla} multi-agent system grows by Flower-of-Life construction, which is the agent-level analogue of the memory-level Seed$\rightarrow$Egg$\rightarrow$Flower recursion in \S 2.1.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Stage 0 --- Bootstrap.} One agent. The seed-of-self. This is the smallest viable system; it has no Vesicas yet.
+  \item \textbf{Stage 1 --- Vesica.} Two agents. They share an explicit Vesica subject---a named semantic region they both write to and read from. This is the smallest configuration with a non-trivial overlap surface, and it is where most existing ``two-LLM critic'' systems live.
+  \item \textbf{Stage 2 --- Seed.} One coordinator $+$ six specialists in hexagonal arrangement; each adjacent specialist-pair shares a Vesica subject; the coordinator shares a Vesica with each specialist. Total: 7 agents, $6 + 6 = 12$ Vesica subjects.
+  \item \textbf{Stage 3 --- Egg.} The six inter-specialist Vesicas are \emph{promoted} to first-class agents. Each promoted Vesica-agent's job is to maintain the intersection between two specialists: to summarize what they agree on, to flag where they diverge, to keep a running representation of their overlap that either specialist can read. Total: 13 agents.
+  \item \textbf{Stage 4 --- Fruit / Council.} When the system enters council mode, the 13 agents temporarily form a $K_{13}$ deliberation graph: every agent attends to every other (Metatron's Operator). Used for high-stakes decisions only; expensive.
+  \item \textbf{Stage 5 --- Flower.} The recursive case. Each Vesica-agent becomes the core of its own Seed: the system spawns six new specialist-agents around it, and the construction repeats. The resulting communication graph is, at any depth $d$, the Flower of Life expanded $d$ times.
+\end{itemize}
+
+\textbf{Message-passing semantics.} Each agent has its own subject (publish $+$ subscribe; durable work queue), Vesica subjects with each adjacent neighbor (publish $+$ subscribe; fan-out), and a coordinator subject (subscribe; fan-out).
+
+Messages adhere to a \textbf{Cortical Messaging Protocol (CMP)} compatible with the Thousand Brains Project framing (Clay et al.\ 2024; public spec at \url{https://thousandbrainsproject.readme.io/docs/cortical-messaging-protocol}). Each message carries not just content but a coordinate-grounded reference frame:
+
+\begin{lstlisting}
+from typing import Any, Optional
+from pydantic import BaseModel, Field
+
+class Pose(BaseModel):
+    location: list[float]                   # coordinate in shared reference frame
+    rotation: list[float]                   # orientation vector
+
+class CMPMessage(BaseModel):
+    sender_id: ULID
+    confidence: float = Field(ge=0.0, le=1.0)
+    pose: Pose
+    object_id: Optional[str] = None         # high-level conceptual identifier
+    features: Optional[dict[str, Any]] = None
+    vesica_context: Optional[ULID] = None   # the Vesica subject this participates in
+\end{lstlisting}
+
+The decisive structural commitment: \textbf{agents communicate via persistent Vesica subjects, not via direct unicast.} This is what makes the topology connection-first rather than hierarchy-first. There is no parent-child edge anywhere in the graph that is not also someone's Vesica.
+
+Substrate is implementation-agnostic. NATS-style hierarchical subjects with wildcards (\texttt{mandorla.flower.depth2.seed3.vesica.specialist1.specialist4}) are one natural fit, because the subject hierarchy directly mirrors the geometric one. Celery / Redis Streams / RabbitMQ are alternatives. The Thousand Brains CMP itself is the closest pre-existing protocol designed for repeated-unit voting, and \textsc{Mandorla} can be read as proposing a CMP-compatible \emph{graph topology} for the units it connects.
+
+\subsection{The Mandorla Cognitive Cycle}
+
+The per-thought cycle of a \textsc{Mandorla} system, abstracted away from any particular implementation:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Invocation.} A query enters at some point in the Flower. It is encoded into the same embedding space as the Regions.
+  \item \textbf{Descent.} The query is routed to its top-$k$ nearest Regions by center distance. This is vanilla nearest-neighbor retrieval and serves as the lower bound of behavior---if \textsc{Mandorla} does no better than this, it has no reason to exist.
+  \item \textbf{Vesica Search.} For each pair $(A, B)$ among the top-$k$ retrieved regions, \texttt{intersect(A, B)} is computed. The resulting candidate Vesicas are scored by overlap volume $\times$ query-alignment. Candidate Vesicas already \texttt{promote}-d are looked up; novel ones are computed on the fly.
+  \item \textbf{Seed Formation.} If a candidate Vesica is dense enough (overlap above threshold $\tau_v$) and persistent enough (productively co-retrieved more than $\tau_p$ times in recent history) it spawns a Seed: a 6-petal configuration around it, where the petals are drawn from the Region neighborhood. The system reasons over the Seed.
+  \item \textbf{Council (optional).} For high-stakes queries (signaled by user, by uncertainty, or by a meta-heuristic), the active configuration is expanded to a Fruit and Metatron's Operator runs $K_{13}$ attention. Output: a votes-weighted answer plus an explicit disagreement spectrum.
+  \item \textbf{Promotion.} Vesicas that were productively used in this cycle---i.e., contributed to the answer with high attention weight---get their \texttt{promotion\_score} incremented. When the score crosses $\theta_{\text{promote}}$, \texttt{promote()} is called, and the Vesica becomes a first-class Region available to future cycles. Promotion is \emph{learning}. It is geometric, not gradient-descent. It is the \textsc{Mandorla} analogue of a Hebbian synapse, but operating at the level of named regions of meaning rather than synaptic weights.
+  \item \textbf{Consolidation.} Periodically---analogous to sleep---the Vesica graph is pruned and reorganized. Rarely-traversed Vesicas decay (\texttt{promotion\_score} decays geometrically; below a floor, the Region is GC'd unless cited). Densely-traversed Vesicas get re-centered (their center is updated to the centroid of their actual recent uses). Clusters of Vesicas with high mutual overlap are candidate-merged. This is closely related to the consolidation step in Wu et al.'s Kanerva Machine and to the offline replay mechanisms in Whittington et al.\ (2020) TEM.
+\end{enumerate}
+
+The cycle is intentionally simple. The work is in the primitives.
+
+\subsection{The Markov-Blanket Identity}
+
+This section makes a load-bearing structural claim. We state it cleanly, and we mark it as---to my knowledge---novel, therefore the highest-priority target for adversarial mathematical review.
+
+\begin{quote}
+\textbf{Claim.} \emph{The Vesica $V(A, B)$ between two regions $A$ and $B$ is, structurally, a Markov blanket between them.} The internal states of $A$ and the internal states of $B$ are conditionally independent given the contents of $V(A, B)$.
+\end{quote}
+
+In Friston's formulation (Friston 2019; Parr, Da Costa \& Friston, \emph{Phil.\ Trans.\ A} 2020; Hip\'olito et al.\ 2021), a Markov blanket is the partition of states (sensory $+$ active $=$ blanket) that renders the internal states of a ``particular'' conditionally independent of the external states:
+
+\[ p(I, E \mid B) = p(I \mid B) \cdot p(E \mid B) \]
+
+A Vesica appears to be exactly such a partition for two Regions: anything $A$ ``knows'' about $B$ that is decision-relevant is, by construction, in the overlap of their supports---that is, in the Vesica. Anything outside the Vesica is, for purposes of $A \leftrightarrow B$ exchange, conditionally independent.
+
+If this identification holds, three consequences follow:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textsc{Mandorla} \textbf{Regions are \emph{particles} in Friston's sense.} Each has internal, blanket, and external states. The Vesicas are the blankets.
+  \item \textbf{The Flower-of-Life construction is the spatial recursion of nested Markov blankets.} In the FEP literature, ``Markov blankets of Markov blankets'' is the standard formulation for hierarchical self-organization (Friston 2019; Parr et al.\ 2020). \textsc{Mandorla}'s Seed$\rightarrow$Egg$\rightarrow$Flower$\rightarrow$Fruit recursion is, structurally, that nesting drawn explicitly. To my knowledge, no one has previously identified the Flower-of-Life construction as a literal diagram of Markov-blanket recursion. We make the claim cleanly and ask the FEP community to falsify it.
+  \item \textbf{Continuous-density extension.} Possati (\emph{Markov Blanket Density and Free Energy Minimization}, arXiv:2506.05794, 2025) reframes Markov-blanket density as a continuous scalar field $\rho(x) \in [0, 1]$ over space, where $\rho = 1$ indicates perfect conditional independence and $\rho = 0$ indicates maximal coupling. We adopt this proposal as a \emph{working hypothesis}, not as established formalism---Possati 2025 is a recent (June 2025) preprint with limited independent citations as of this writing, and we use the symbol $\rho$ to match Possati's notation. Under that framing, \textsc{Mandorla}'s cognitive cycle (\S 2.4) becomes implementable as gradient flow on a Possati-style scalar field over Region densities, where $-\log \rho$ plays the role of variational free energy.
+\end{enumerate}
+
+The Markov-blanket identity is therefore not a metaphor---it is a structural claim with a specific failure mode (\S 3.3 F4): if d-separation properties of an actual Markov blanket are mathematically incompatible with vesica-piscis intersection geometry under realistic distributions, this thesis breaks and the FEP--\textsc{Mandorla} bridge collapses. It is one of the highest-priority items in the open roadmap (\S 3.2).
+
+\subsection{Hex Working Memory}
+
+We propose, more briefly, that the working memory / context window of a \textsc{Mandorla} system is laid out not as a sequence (current transformer practice) but as a \textbf{hex grid}---a 2D triangular lattice with 6-connectivity.
+
+Concretely: the KV-cache cells are placed at hex grid positions (axial or cube coordinates with $a + b + c = 0$). Adjacent cells share Vesicas; the global topology has uniform 6-connectivity; the cost of moving attention between any two cells is proportional to hex-grid distance ($O(\sqrt{n})$), not to sequential token distance. The model can attend to a ``nearby'' piece of working memory without first traversing every token in between, the way it has to under positional encoding of a 1D sequence.
+
+The hex-grid layout is the natural one for two reasons. First, by Hales' honeycomb theorem, it minimizes per-cell perimeter for equal areas, which means it minimizes the total surface area of inter-cell Vesicas while keeping uniform connectivity---the right trade-off if the cost of a Vesica edge is non-trivial. Second, it is the topology that grid cells use to encode both physical and conceptual space (Constantinescu et al.\ 2016), suggesting that if you want a context window that supports the kind of relational generalization grid cells enable, you should give it the same shape.
+
+Implementation candidates exist. HexagDLy (Steppa \& Holch, \emph{SoftwareX} 2019; arXiv:1903.01814) extends PyTorch with native hexagonal convolutions and pooling. HexCNN (Zhao, Ke, Korn, Qi \& Zhang, ICDM 2020; arXiv:2101.10897) provides a more memory-efficient native hex-CNN framework. Reported gains versus rectangular-grid-with-padding baselines: $\sim$25\% memory reduction at data loading, $\sim$42\% memory reduction during convolution, $\sim$42\% reduction in training time (Zhao et al.\ 2020---these numbers are domain-specific to \emph{convolution} and should be re-validated for the attention-layer setting \textsc{Mandorla} uses, which is a different operator family). \textsc{Mandorla}'s Hex Working Memory layer would be a transformer attention variant whose positional encoding is hex-grid axial coordinates and whose attention bias is hex distance. This is a concrete falsifiable architectural choice and we list it as Year-2 territory in \S 3.2.
+
+\section{Part III --- The Research Blueprint}
+
+\subsection{The First Three Experiments}
+
+Each is named, scoped, falsifiable, runnable in 4--12 weeks by a small team, and tied to one of the three theses in \S 1.4.
+
+\subsubsection*{Experiment 1 --- Vesica-RAG vs.\ Vanilla RAG}
+
+\textbf{Tests Thesis 2 (Connection over Hierarchy).}
+
+\textbf{Hypothesis.} A retrieval system that explicitly indexes and retrieves \emph{intersections} (promoted Vesicas) outperforms vanilla nearest-neighbor RAG on tasks requiring multi-concept reasoning---queries that name two or more distinct concepts whose answer lives at their intersection.
+
+\textbf{Setup.}
+
+\begin{itemize}[leftmargin=*]
+  \item Build a corpus where ground-truth answers are known to lie at the intersection of $k \geq 2$ semantic regions. The natural fit is multi-hop QA: HotpotQA (Yang et al.\ 2018), MuSiQue / MuSiQue-Ans (Trivedi et al., TACL 2022, arXiv:2108.00573), 2WikiMultiHopQA (Ho et al., COLING 2020). A 2-hop or higher question is, definitionally, asking for the intersection of two or more facts.
+  \item Implement \textbf{Vesica-RAG}: index chunks of Wikipedia using GumbelBox embeddings (Dasgupta et al.\ 2020, via \texttt{iesl/box-embeddings}) on top of a strong dense retriever (ColBERTv2 or contriever). On each retrieval, compute pairwise box intersections among the top-$k$, score each Vesica by expected overlap volume $\times$ cosine to query, retrieve from the union of points and (promoted) Vesicas. Maintain a Vesica store with promotion / decay per \S 2.4.
+  \item Compare against:
+  \begin{itemize}
+    \item Sparse: BM25.
+    \item Dense: ColBERTv2 (Santhanam et al., NAACL 2022, arXiv:2112.01488), contriever (Izacard et al., TMLR 2022, arXiv:2112.09118).
+    \item Hybrid: BM25 $+$ dense reranking.
+    \item Generative augmentation: HyDE (Gao et al.\ 2023).
+    \item Hierarchical: RAPTOR (Sarthi et al.\ ICLR 2024, arXiv:2401.18059).
+    \item Graph: HippoRAG (Guti\'errez et al., NeurIPS 2024, arXiv:2405.14831); HippoRAG 2 (Guti\'errez et al.\ 2025, arXiv:2502.14802).
+    \item Hypergraph: HyperGraphRAG (Luo et al., arXiv:2503.21322), Hyper-RAG (Feng et al., arXiv:2504.08758), Cog-RAG (Hu et al., AAAI 2026, arXiv:2511.13201).
+    \item (Note: Microsoft GraphRAG (Edge et al., arXiv:2404.16130) was designed for query-focused summarization, not multi-hop QA; included for completeness, not as a primary baseline.)
+  \end{itemize}
+\end{itemize}
+
+\textbf{Falsifiable prediction (pre-registered).} Vesica-RAG shows $\geq$10\% relative improvement in answer F1 / EM on 2$+$ hop subsets of MuSiQue and 2WikiMultiHop, while not degrading on single-concept (1-hop) queries by more than 2\% relative. Both conditions must hold. If either fails, Thesis 2 is undermined and we report it.
+
+\textbf{Auxiliary measurement.} A \textbf{vesica-coverage metric}: the fraction of multi-hop questions whose ground-truth answer chunk pair was actually identified by the retriever as a single Vesica before the LLM saw it. This metric is intrinsic to \textsc{Mandorla} and tests the ``intersection retrieval'' claim independent of LLM strength.
+
+\textbf{Timeline.} 6--8 weeks. (See \S 3.4 for the \emph{smallest defensible slice} sized for solo execution: HotpotQA dev set, contriever baseline, two weeks.)
+
+\subsubsection*{Experiment 2 --- Hex-Vote: A 7-Node Cortical Council}
+
+\textbf{Tests Thesis 1 (Geometric Primacy).}
+
+\textbf{Hypothesis.} A multi-agent reasoning system in \textbf{Seed configuration} (1 coordinator $+$ 6 specialists, each adjacent specialist-pair sharing a persistent Vesica subject) outperforms (a) single-agent CoT, (b) flat 7-agent debate, (c) hub-and-spoke 7-agent orchestrator on tasks requiring synthesis across multiple specialty domains.
+
+\textbf{Setup.}
+
+\begin{itemize}[leftmargin=*]
+  \item 7 LLM instances (same base model, role-prompted). Coordinator publishes the query; specialists work in their specialty; each adjacent specialist-pair has a Vesica subject they both publish to and read from; coordinator reads the 6 Vesica subjects and the 6 specialist outputs and synthesizes.
+  \item Topology variants:
+  \begin{itemize}
+    \item \textbf{Hex-Vote (Seed):} as above. Six lateral Vesica subjects.
+    \item \textbf{Flat debate:} 7 agents, all-to-all ($K_7$). AutoGen GroupChat as analogue.
+    \item \textbf{Hub-and-spoke:} 1 orchestrator, 6 leaves, no lateral Vesicas. CrewAI hierarchical mode.
+    \item \textbf{Single-agent CoT.} Same base model, chain-of-thought prompting.
+  \end{itemize}
+  \item Benchmarks: MMLU-Pro (Wang et al.\ 2024); GPQA Diamond (Rein et al.\ 2024); a custom synthesis benchmark (held out) where each item explicitly requires combining knowledge from $\geq$3 of the 6 specialty domains.
+  \item \textbf{Token budget held constant} across all conditions to avoid the ``more tokens always wins'' confound.
+\end{itemize}
+
+\textbf{Falsifiable prediction (pre-registered).} Seed (Hex-Vote) outperforms hub-and-spoke and flat debate on synthesis-heavy subsets by $\geq$5\% relative accuracy, with token cost within $\pm$3\% of the highest-cost baseline. If Seed loses to either alternative on the synthesis subset under matched compute, Thesis 1 is weakened.
+
+\textbf{Baselines worth naming.} AutoGen GroupChat (Wu et al.\ arXiv:2308.08155); CrewAI hierarchical; AgentNet; RUMAD; AMAS.
+
+\textbf{Why this is the right test of geometric primacy.} If hex topology is just decoration, performance will be invariant to topology under matched compute. If the geometry is doing something, it should show up here, where the only difference between conditions is the shape of the communication graph.
+
+\textbf{Timeline.} 4--6 weeks.
+
+\subsubsection*{Experiment 3 --- Recursive Construction: Mandorla Curriculum vs.\ Standard Training}
+
+\textbf{Tests Thesis 3 (Recursive Construction).}
+
+\textbf{Hypothesis.} A learning curriculum in which the model is forced to \emph{construct new representations at the intersection of pre-existing representations}---i.e., where the loss explicitly rewards predicting the Vesica of two named entities from their parents \emph{and} predicting the parents from the Vesica---produces better compositional generalization than standard MLM/CLM training.
+
+\textbf{Setup.}
+
+\begin{itemize}[leftmargin=*]
+  \item Two small transformers (100M--300M params), trained from scratch on the same corpus (a clean subset of C4 or RedPajama).
+  \item \textbf{Baseline:} standard CLM, with a span-corruption auxiliary loss \`a la T5.
+  \item \textbf{Mandorla-curriculum:} the same model and corpus, but with two additional self-supervised losses:
+  \begin{enumerate}
+    \item \textbf{Vesica prediction:} given two co-occurring named entities $E_1$ and $E_2$ in a paragraph, the model must predict a representation of $V(E_1, E_2)$ (operationalized as a contrastive objective against a held-out paragraph containing both $E_1$ and $E_2$); the entity-pair embeddings are trained such that their box-intersection contains the third-entity-pair embedding from the held-out paragraph.
+    \item \textbf{Parent reconstruction:} given a Vesica representation, the model must predict back its parents (a denoising objective).
+  \end{enumerate}
+  \item Compositional generalization benchmarks: COGS (Kim \& Linzen, EMNLP 2020, arXiv:2010.05465), SCAN (Lake \& Baroni, ICML 2018), ReCOGS / ReCOGS\_pos (Wu, Manning \& Potts, \textbf{TACL 2023}, arXiv:2303.13716).
+  \item I.i.d.\ evaluation (held-out test from the same distribution) to confirm no degradation.
+\end{itemize}
+
+\textbf{Falsifiable prediction (pre-registered).} Mandorla-curriculum model shows $\geq$15\% \textbf{relative} improvement in accuracy on the systematic generalization splits (COGS Gen split, SCAN length / primitive splits, ReCOGS structural generalization) while losing no more than 2\% \textbf{relative} on the i.i.d.\ test accuracy. Both conditions must hold. (Note: \emph{relative}, not \emph{absolute}---15\% absolute on COGS Gen would be enormous; we are committing to relative-to-baseline.)
+
+\textbf{Baselines.} Standard CLM; span-corruption (T5); the Csord\'as et al.\ 2021 (arXiv:2108.12284) ``simple tricks'' Transformer that raises COGS to $\sim$81\% (this is the harder baseline to beat); Onta\~n\'on, Ainslie, Cvicek \& Fisher (arXiv:2108.04378); Furrer et al.\ 2020 (arXiv:2007.08970) pre-training comparison. We note that Tree-of-Thoughts (Yao et al., NeurIPS 2023, arXiv:2305.10601) is an inference-time search method; if we use ToT-style derived trajectories as a training-data augmentation, we cite both the original ToT paper and the specific downstream augmentation pattern used.
+
+\textbf{Why this is the right test of recursive construction.} Standard CLM teaches the model to predict the next token given prior tokens. The Mandorla curriculum teaches it to \emph{construct a new region from the geometric overlap of two existing regions, and to construct the parents from the overlap}. If the recursive-construction thesis is right, this should improve exactly the kind of OOD generalization that COGS / SCAN / ReCOGS measure, because those benchmarks are designed to test whether the model can compose representations it has not seen composed before.
+
+\textbf{Timeline.} 8--12 weeks (training a 100--300M model from scratch is the longest of the three).
+
+\subsection{The Open Roadmap (Year 2+)}
+
+This is an explicit invitation to other researchers. The questions below are out of scope for the first three experiments but are the natural Year-2 extensions.
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Grounding Vesicas in LLM internals.} What is the right way to ground Vesica regions in the parameters of a pretrained LLM? Sparse-autoencoder features (Anthropic---Bricken et al.\ 2023; Templeton et al.\ 2024, \emph{Scaling Monosemanticity}) are the obvious candidate---each SAE feature is a candidate Region---but is feature intersection (the co-occurrence of two features in a residual stream) the right operationalization of a Vesica? Attribution-graph nodes (Lindsey et al., Anthropic 2025, \emph{Circuit Tracing} / \emph{On the Biology of a Large Language Model}) are another candidate. This is open territory and probably the highest-value Year-2 question.
+  \item \textbf{Flower-of-Life as generative grammar for NAS.} Can the Seed$\rightarrow$Egg$\rightarrow$Flower$\rightarrow$Fruit construction be turned into a generative grammar for neural architecture search? Each Seed is a sub-network; each promoted Vesica becomes a new sub-network; the growth rule is fixed. Compare to FractalNet (Larsson et al.\ 2017) and to NAS over modular spaces.
+  \item \textbf{Markov-blanket recursion formalization.} How does \S 2.5's identification connect formally to Friston's hierarchical free-energy minimization? The geometrized FEP (Possati 2025) is the most plausible bridge---pending wider validation of that paper. Concretely: can the \textsc{Mandorla} cognitive cycle (\S 2.4) be derived as gradient descent on a Possati-style scalar field $\rho$ over Region densities?
+  \item $\boldsymbol{\Phi}$ \textbf{of a Seed.} What is the integrated information $\Phi$ (in the Tononi/IIT 4.0 sense, Albantakis et al.\ 2023) of a Seed configuration vs.\ an isolated agent vs.\ a hub-and-spoke configuration? Does \textsc{Mandorla} generate measurably higher $\Phi$ than baselines? The geometric-$\Phi$ formulation (Oizumi et al.\ 2016) is the tractable form; the \textsc{Mandorla} hex topology is a clean test case because of its uniform 6-connectivity.
+  \item \textbf{Emergent grid cells in Hex Working Memory.} Banino et al.\ (2018) showed that hexagonal grid representations emerge spontaneously in path-integration networks. Does a \textsc{Mandorla} system with hex working memory and a path-integration auxiliary objective produce measurable grid-cell-like representations in its working-memory cells? If yes, this is a strong convergent-evidence result.
+  \item \textsc{Mandorla} \textbf{scaling laws.} Hypothesis: \textsc{Mandorla}'s Flower-of-Life growth rule yields communication-edge cost that is \emph{linear} in the number of agents, rather than the quadratic cost of all-pairs communication. At depth $d$, the Flower has $n \sim 6^d$ nodes and $O(6^d) = O(n)$ Vesica edges, vs.\ $O(n^2)$ for all-pairs. Both grow exponentially in depth, but the \emph{edge-to-node ratio} stays bounded for \textsc{Mandorla} and grows linearly with $n$ for all-pairs. Does this translate to empirical compute savings while maintaining performance?
+  \item \textbf{Categorical formalization.} Can \textsc{Mandorla} be expressed as a specific monad in the Symbolica/DeepMind 2-category of parametric maps (Gavranovi\'c et al., ICML 2024)? The ``vesica monad'' should have unit $\eta$ that promotes a Region to its singleton intersection with itself, and multiplication $\mu$ that flattens intersection-of-intersections back to a single Vesica. Spelling this out would give \textsc{Mandorla} the same kind of clean algebraic foundation that GDL gave to architecture design.
+  \item \textbf{Topology-preserving learning.} When \texttt{promote()} creates a new Region, the embedding space's topology shifts. What invariants does the system preserve across this shift? Closely related to sheaf-cohomological invariants in Bodnar et al.\ (NeurIPS 2022) and Hansen \& Gebhart (2020); \textsc{Mandorla}'s promotion event may correspond to a specific cohomological-class-preserving update.
+\end{enumerate}
+
+These are not roadblocks. They are the territory we want collaborators to claim.
+
+\subsection{Falsifiability and Failure Modes}
+
+The disciplinary commitment of this document is that \textsc{Mandorla} is falsifiable \emph{in public}. Below are the conditions under which we will report \textsc{Mandorla} as falsified or merely decorative:
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{F1 --- Retrieval failure.} If Vesica-promoted regions consistently underperform raw nearest-neighbor on Experiment 1's multi-concept queries, Thesis 2 is undermined and the central architectural claim is wrong.
+  \item \textbf{F2 --- Topology irrelevance.} If Hex-Vote fails to outperform hub-and-spoke and flat debate on Experiment 2's synthesis benchmarks under matched token budget, Thesis 1 is weakened. (A single experiment is not decisive; if F2 fires, we will investigate scaling, base-model choice, and benchmark design before concluding.)
+  \item \textbf{F3 --- Curriculum failure.} If the Mandorla curriculum produces no compositional-generalization advantage in Experiment 3, Thesis 3 is falsified at small scale; we then either revise the curriculum or report the negative result.
+  \item \textbf{F4 --- Mathematical incompatibility.} If the Markov-blanket identification in \S 2.5 is shown to be mathematically broken---i.e.\ if some structural property of the vesica-piscis intersection is incompatible with the conditional-independence semantics of a Markov blanket under realistic distributions---then \S 2.5's identity claim must be retracted, even if the rest of the spec survives.
+  \item \textbf{F5 --- Baseline redundancy.} If \textsc{Mandorla} does not exhibit any computational advantage over a hypergraph-NN baseline (HGNN, AllSet/AllSetTransformer, ED-HNN, HyperGraphRAG, Cog-RAG) at matched parameters, the differentiator collapses and \textsc{Mandorla} reduces to a renaming.
+  \item \textbf{F6 --- Grid anisotropy.} If hex topology shows no advantage over fully-connected attention at any scale where they can be fairly compared, the ``geometric primacy'' thesis is empirical noise.
+\end{itemize}
+
+\textbf{Pre-registration} is the discipline we commit to. The first three experiments will have hypotheses, predictions, and analysis plans deposited publicly (OSF Registries) before the data is collected.
+
+\subsection{The Build Path}
+
+Concrete 12-week first build, sized for a small team (1--2 engineers $+$ 1 researcher):
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{W1--W2:} Implement Vesica primitive $+$ Region store (Python / PyTorch). Use \texttt{iesl/box-embeddings} (\texttt{pip install box-embeddings}) for GumbelBox. write / intersect / promote / walk / vote. HDC-bundling alternate for ablation.
+  \item \textbf{W3--W4:} Build promotion / decay / consolidation. Train consolidation loop on a held-out validation stream. Verify Vesica graph grows sub-linearly in corpus size.
+  \item \textbf{W5--W6:} Run Experiment 1 (Vesica-RAG). Index $\sim$1M Wikipedia chunks (HotpotQA wiki dump for the slice). HotpotQA, MuSiQue, 2WikiMultiHop. Pre-register predictions before evaluation (OSF Registries).
+  \item \textbf{W7--W8:} Build Seed agent topology (NATS subjects $+$ CMP messages). Implement four topology variants for Experiment 2. Stand up the synthesis benchmark.
+  \item \textbf{W9--W10:} Run Experiment 2 (Hex-Vote). MMLU-Pro, GPQA Diamond, custom synthesis bench.
+  \item \textbf{W11--W12:} Analysis, write-up, open-source release. Whether result is positive or negative, publish.
+\end{itemize}
+
+For a solo first pass, the \textbf{smallest defensible slice} is Vesica-RAG on the HotpotQA dev set, against a single dense baseline (contriever), with the vesica-coverage auxiliary metric. Two weeks of focused work. One number on one benchmark. If that number is good, the rest of the program is justified. If it's bad, three months are saved.
+
+Experiment 3 (Mandorla curriculum) is a parallel track on a different timescale, requiring training infrastructure for 100--300M-param models from scratch. Best conducted as a 3--4 month effort by a separate sub-team with access to a small compute cluster.
+
+\subsection{Closing --- The Geometry of the Next Architecture}
+
+The point of \textsc{Mandorla} is not that the Flower of Life is sacred. The point is that the geometric primitives mathematics (Hales' honeycomb theorem, T\'oth's disk packing, the Newton--Gregory kissing numbers), neuroscience (entorhinal grid cells coding both physical and conceptual space), and engineering practice (the rediscovery, in geometric and topological deep learning, that the right prior is the right shape) keep converging on are the ones distributed cognition will turn out to need. The Flower of Life is a memorable, generative, falsifiable diagrammatic compression of that convergence. It is---and this is important---\emph{not} a claim that the universe is shaped this way. It is a claim that \emph{cognition under packing-and-overlap constraints} tends to be shaped this way, and that we should design for it on purpose rather than rediscover it accidentally.
+
+The metaphor's job is to make the engineering memorable. The engineering's job is to make the metaphor true. If \S 3.1 succeeds, the Flower of Life will have earned its place in the technical vocabulary of the field, and we will have a name---Mandorla, Vesica, Seed, Egg, Flower, Fruit, Metatron's Operator---for a family of constructions that the field has been groping toward without one. If \S 3.1 fails, the names go in the bin and we report the failure cleanly.
+
+The primitive is the intersection. The recursion is the engine. The geometry is on trial.
+
+Build it. Measure it. Tell us what happens.
+
+\section*{Caveats}
+
+A few caveats explicitly, in the discipline of \S 3.3:
+
+\begin{itemize}[leftmargin=*]
+  \item The \textbf{Markov-blanket identity (\S 2.5)} is presented as load-bearing but is, at the moment, a structural identification rather than a proven theorem. The probability-theoretic precise form (which family of distributions over Regions makes Vesica-as-blanket exact rather than approximate) is open, and Possati's continuous-density extension is a June 2025 preprint with limited independent citations as of this writing.
+  \item The \textbf{GumbelBox formulation in \S 2.1} uses Lemma 1 and the closed-form softplus expression from Dasgupta et al.\ NeurIPS 2020 \S 4.1. Implementers should consult the paper directly and use \texttt{iesl/box-embeddings}'s \texttt{GumbelBoxTensor} rather than re-deriving.
+  \item The \textbf{``kissing number $= 6$'' justification of the Seed} is exact in 2D; in high-dimensional embedding spaces ($d > 2$) kissing numbers grow rapidly (e.g., the kissing number in $\mathbb{R}^{24}$ is exactly 196,560, by Cohn et al.\ 2017). The defensible claim: the visible/diagrammatic topology has kissing number 6 in 2D, and that 2D shadow is what neuroscience measures and what makes the system human-readable. The latent-space topology may be much richer; Year-2 work should investigate this gap.
+  \item The \textbf{empirical ``sweet spot of $\sim$6 specialists''} in multi-agent literature is folkloric, not a theorem. We mention it only as suggestive.
+  \item The \textbf{Thousand Brains Project comparison} is structural, not endorsing every TBP claim about consciousness or the cortex. We adopt the cortical-column-as-unit framing (well-supported) and the CMP framing, and remain agnostic on the rest. Note that Thousand Brains Project and Numenta are now distinct organizations sharing genealogy.
+  \item The \textbf{Lemanski (2019) lineage claim}---that this is the only peer-reviewed paper joining sacred geometry and neural networks---is true to my best literature search at time of writing but is the kind of claim that ages quickly. \textsc{Mandorla}'s novelty does not depend on Lemanski being the only prior; it depends on the synthesis being novel.
+  \item The \textbf{HexCNN performance numbers in \S 2.6} ($\sim$25\% / $\sim$42\% / $\sim$42\%) are from the ICDM 2020 paper's \emph{convolution} setting; they should be re-validated in \textsc{Mandorla}'s \emph{attention-layer} setting before being relied on.
+  \item The \textbf{``to my knowledge, novel''} claims---particularly the Markov-blanket / Flower-of-Life identification (\S 2.5) and the unification under one named system---are the author's best survey at time of writing. They are the claims most worth attempting to falsify on prior-art grounds, and corrections are welcome.
+  \item \textbf{Numerical thresholds} in the predictions ($\geq$10\%, $\geq$15\%, $\leq$2\% degradation) are pre-committed for honesty but are first-pass guesses. They should be tightened by power analysis before formal pre-registration on OSF.
+\end{itemize}
+
+This document is the foundational stone, not the finished cathedral. It is offered in the spirit of Christopher Alexander's \emph{A Pattern Language} (1977): a vocabulary that is meant to be used---extended, contradicted, partially adopted, partially refuted. The names are technical; the claims are falsifiable; the geometry is on trial. If you want to collaborate, the Vesica subject is open.
+
+\section*{Citation}
+
+\begin{verbatim}
+@article{patterson2026mandorla,
+  title  = {MANDORLA: A Geometric Foundation for Machine Cognition},
+  author = {Patterson, Jacob},
+  year   = {2026},
+  eprint = {arXiv:TBD},
+  primaryClass = {cs.AI},
+  url    = {https://runascode.com/mandorla}
+}
+\end{verbatim}
+
+\end{document}
