@@ -154,3 +154,44 @@ ratio actual  = 0.040
 These will be overwritten when the script is re-run against the full 5.2M-
 passage encode. Full-corpus numbers will be added as a separate
 LAB-NOTES.md entry then.
+
+---
+
+## 2026-05-11 — `PRECOMMIT.md` Amendment 2: §3.4 Build Path mapping
+
+### Trigger
+
+Audit-readiness review: a reviewer (peer review, hiring panel, future-self)
+walking from a `RESULTS.md` claim back to "what was the original 12-week
+program in `mandorla.md` §3.4, and how does this run fit into it?" should
+find a single, frozen, structured answer. Prior to this amendment, the
+mapping was implicit — scattered across the D1–D4 deferral decisions in
+`PRECOMMIT.md`'s body, paper §3.4 itself, and a "What this slice tests /
+does not test" subsection. None of those gave the W1-by-W12 enumeration
+that a reviewer would scan for.
+
+### What the amendment did
+
+Adds a "Mapping to `mandorla.md` §3.4 'The Build Path'" table to
+`PRECOMMIT.md` enumerating, week-by-week, what the slice does, defers, or
+declares out-of-scope, with citations to the existing decisions that
+explain why. Also calls out the **one numerical drift** from §3.4 — the
+slice's 5.2M-passage `BeIR/hotpotqa` corpus is finer-grained than §3.4's
+"~1M Wikipedia chunks" — and lays out three reasons that drift is
+deliberate (canonical retrieval-formatted corpus, title-unique 1-to-1
+mapping for vesica-coverage, hardware-feasible at the slice's scale).
+
+### What did not change
+
+No binding decision (D1–D4, A–F, decision rule, architecture spec, baselines,
+sample size, ship criteria) is altered. The amendment is *informational* in
+the strict sense — its purpose is to consolidate existing scope facts into
+one auditable block, not to redirect the slice.
+
+### Why this is a `PRECOMMIT.md` amendment rather than a `LAB-NOTES.md`-only entry
+
+`CLAUDE.md` §1 specifies that any content change to `PRECOMMIT.md` goes
+through a dated amendment block, regardless of whether the change is
+binding-altering or informational. Adding a section to the body — even
+one that doesn't reframe any decision — is still a content change. The
+amendment block preserves a clean diff in the audit chain.

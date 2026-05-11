@@ -249,6 +249,35 @@ The 0.05 target was a *theoretical anchor*, not a binding equality. The slice's 
 
 ---
 
+### Amendment 2 — Mapping to `mandorla.md` §3.4 "The Build Path" (2026-05-11)
+
+**Status.** Informational. **No binding decision (D1–D4, A–F) changes here.** This amendment makes the consequences of those existing decisions explicit by enumerating, week-by-week, how `mandorla.md` §3.4's 12-week small-team build path is collapsed into the solo-slice scope.
+
+**Why now.** For audit-readiness — peer review, hiring panels, future-self forensics, or anyone walking back from a `RESULTS.md` claim to "what was the original program and how did this run fit into it?" The information was scattered across `PRECOMMIT.md` D-rows, paper §3.4, and the screen layout in `README.md`. This block consolidates it.
+
+**Triggered by.** Audit-readiness conversation 2026-05-11; recorded in `LAB-NOTES.md` under that date.
+
+**Mapping.** §3.4 specifies a 12-week build for a 1–2 engineer + 1 researcher team. §3.4 also carves out a "smallest defensible slice" for solo execution. This slice follows the carve-out, not the team path.
+
+| §3.4 weeks (team path) | Slice state | Reason / link to existing decision |
+|---|---|---|
+| **W1–W2** — Vesica primitive + Region store: `write`, `intersect`, `promote`, `walk`, `vote`; HDC alternate for ablation | **Partial:** `intersect` and in-memory `write` shipped (`src/regions.py`, `src/box.py`). **Deferred:** `promote`, `walk`, `vote`, HDC alternate. | Slice tests Thesis 2 (intersection retrieval). The deferred primitives are the cross-query store (`promote`), graph traversal (`walk`), council operator (`vote`), and a substrate ablation (HDC) — all separable claims. PRECOMMIT.md **D3** for the store; the others are out-of-scope per §"Out of scope" line items. |
+| **W3–W4** — promotion / decay / consolidation; verify sub-linear Vesica graph growth | **Deferred whole.** | PRECOMMIT.md **D3**: bundling Hebbian promotion with intersection retrieval conflates two claims into one number. The store, decay, and consolidation are tested as a separate variant in the broader Experiment 1 on MuSiQue + 2WikiMultiHop. |
+| **W5–W6** — Run Experiment 1: index ~1M Wikipedia chunks (HotpotQA wiki dump for the slice); HotpotQA + MuSiQue + 2WikiMultiHop; pre-register on OSF Registries | **🟡 In progress.** Corpus encoded at finer granularity (5.2M passages — see "Numerical drift" below). HotpotQA-only. PRECOMMIT.md (this document) locked 2026-05-10 is the lighter-weight pre-registration analogue; formal OSF filing is for the broader Experiment 1. | PRECOMMIT.md **D1**: slice is a screening go/no-go, not the formal pre-registered prediction. The formal prediction (≥10% relative F1/EM lift on 2+ hop, ≤2% relative loss on 1-hop) is registered against MuSiQue + 2WikiMultiHop, not HotpotQA. |
+| **W7–W8** — Seed agent topology (NATS subjects + CMP messages); four topology variants for Experiment 2 | **Out of scope.** | Experiment 2 (Hex-Vote). Separate program. |
+| **W9–W10** — Run Experiment 2 (Hex-Vote) on MMLU-Pro / GPQA Diamond / synthesis benchmark | **Out of scope.** | Experiment 2. |
+| **W11–W12** — Analysis, write-up, open-source release; publish whether positive or negative | **Slice analog committed:** `RESULTS.md` + go/no-go decision per PRECOMMIT.md §"What 'ship' means" + blog post on `runascode.com/results/vesica-rag-slice`. Same publish-regardless discipline. | The slice's ship criteria mirror §3.4's "publish whether positive or negative." A NO-GO result will be published; binding via the Sign-off block of this document. |
+
+**Numerical drift: corpus chunk count.** §3.4 W5–W6 says *"Index ~1M Wikipedia chunks (HotpotQA wiki dump for the slice)"*. The slice indexes **`BeIR/hotpotqa` = 5,233,329 passages** — one passage per Wikipedia article from the HotpotQA abstracts dump. Reasons this is a deliberate, defensible choice rather than a scope miss:
+
+1. `BeIR/hotpotqa` is the canonical retrieval-formatted version of the HotpotQA Wikipedia abstracts dump (Thakur et al., *BEIR*, NeurIPS Datasets 2021). Using it makes the slice's retrieval geometry directly comparable to the substantial body of RAG papers that already report on the BEIR pipeline.
+2. The 5.2M-passage granularity gives **title-unique 1-to-1 mapping** against HotpotQA `supporting_facts.title`. Audited by `scripts/02_pull_wiki_corpus.py`: **zero unmatched supporting-fact titles** across 233,689 supporting facts in dev + train. This is load-bearing for the vesica-coverage diagnostic — coarser chunking would re-introduce title-aliasing noise that the diagnostic is designed to be free of.
+3. The §3.4 "~1M" figure is presented in the paper as an estimate of post-chunking corpus size for a typical multi-passage chunking strategy, not a binding number; M4 Pro / 48 GB RAM handles 5.2M comfortably (~7.5 GB fp16 embeddings, encoding ETA ~9 h).
+
+**Scope of this amendment.** Documents existing scope; alters nothing. The body of `PRECOMMIT.md` (D1–D4, A–F, decision rule, architecture spec, baselines, sample size, ship criteria, deferrals) remains the binding spec.
+
+---
+
 (Subsequent amendments go here, dated, with a clear statement of what changed and why.)
 
 ---
