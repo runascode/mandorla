@@ -58,23 +58,25 @@ Single-machine, Apple Silicon, ~48 GB RAM recommended.
 ollama pull llama3.1:8b-instruct-q5_K_M
 uv sync
 
-# data + index (~3 days, dominated by ~5.2M-chunk contriever encode on MPS)
-uv run python scripts/01_pull_hotpotqa.py
-uv run python scripts/02_pull_wiki_dump.py
-uv run python scripts/03_chunk_and_encode.py
-uv run python scripts/04_build_faiss.py
-uv run python scripts/05_build_box_index.py    # 64-D projection + α calibration
+# data + index (dominated by the ~5.2M-passage contriever encode; ~10 h on M4 Pro MPS)
+uv run python scripts/01_pull_hotpotqa.py        # HotpotQA dev (7,405) + train (90,447)
+uv run python scripts/02_pull_wiki_corpus.py     # verify BeIR/hotpotqa corpus + supporting-fact audit
+uv run python scripts/03_encode_corpus.py        # contriever-encode 5.2M passages → fp16 shards
+uv run python scripts/04_build_faiss.py          # IndexFlatIP over the contriever shards
+uv run python scripts/05_build_box_index.py      # 64-D random projection + per-chunk boxes + α calibration
 
 # calibration
-uv run python scripts/06_calibrate_tau_v.py    # τ_v on 1k train questions
+uv run python scripts/06_calibrate_tau_v.py      # τ_v = p50 of pairwise E[intersection log-vol] on 1k train questions
 
 # slice eval
-uv run python scripts/07_run_baseline.py        # contriever top-25 → Ollama
-uv run python scripts/08_run_vesica.py          # in-query Vesicas + union → Ollama
-uv run python scripts/09_score.py               # F1, EM, vesica-coverage, bootstrap CIs
+uv run python scripts/07_run_baseline.py         # contriever top-25 → Ollama → answer
+uv run python scripts/08_run_vesica.py           # in-query Vesicas + retrieval union → Ollama → answer
+uv run python scripts/09_score.py                # F1, EM, vesica-coverage, bootstrap CIs, go/no-go → RESULTS.md
 ```
 
-Outputs land in `results/raw/*.jsonl` (per-question) and `RESULTS.md` (headline + plots + go/no-go).
+`scripts/03` is resumable (`--resume` picks up at the last completed shard). `scripts/07` and `scripts/08` are resumable by question id. Run `uv run pytest tests/` at any point to verify the primitives.
+
+Outputs land in `results/raw/*.jsonl` (per-question) and `results/RESULTS.md` (headline + diagnostic + CIs + go/no-go) and `results/scores.json` (machine-readable).
 
 ## Artifacts on completion
 

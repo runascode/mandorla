@@ -195,3 +195,51 @@ through a dated amendment block, regardless of whether the change is
 binding-altering or informational. Adding a section to the body — even
 one that doesn't reframe any decision — is still a content change. The
 amendment block preserves a clean diff in the audit chain.
+
+---
+
+## 2026-05-11 — Pipeline code complete (scripts 01–09, src modules, 92 tests)
+
+While the corpus encode runs (≈24% through 5.2M at this entry), the rest
+of the pipeline was written so it's ready the moment the indices exist:
+
+- **`src/`** — `regions.py` (Region / Vesica / BoxExtent per §2.2),
+  `box.py` (GumbelBox closed-form intersect per Dasgupta 2020 Lemma 1),
+  `projection.py` (seeded Gaussian random projection 768→64),
+  `calibration.py` (α grid search), `retrieve.py` (DenseRetriever
+  Protocol + numpy `BaselineRetriever` + production `FaissDenseRetriever`
+  + `VesicaRetriever`), `eval.py` (HotpotQA F1/EM, vesica-coverage,
+  bootstrap CIs), `generate.py` (Ollama wrapper, decoding pinned in code),
+  `index_io.py` (artifact loaders + `QueryEncoder`), `runner.py` (the
+  shared resumable eval loop), `data.py` (HotpotQA / corpus / shard
+  loaders).
+- **`scripts/`** — `01` HotpotQA pull, `02` corpus verify+audit, `03`
+  contriever encode (resumable), `04` FAISS build, `05` box index + α
+  calibration, `06` τ_v calibration, `07` baseline run, `08` Vesica-RAG
+  run, `09` score → RESULTS.md.
+- **`tests/`** — 92 unit tests across box math, projections, regions,
+  calibration, retrieval (incl. FAISS-vs-numpy ranking agreement), eval
+  metrics, generation prompt assembly, and the runner loop. All green.
+
+Scripts 04–09 can't run end-to-end until `03` finishes and `04`+`05` are
+re-run against the full corpus (the shard-0 smoke tests already validated
+`04` and `05` plumbing). The slice README's "Reproduce" command sequence
+was corrected in the same commit to match the actual script filenames
+(it had stale placeholders `02_pull_wiki_dump.py` / `03_chunk_and_encode.py`
+from when it was first drafted).
+
+### Two interpretation choices made while writing scripts/09
+
+1. **"vesica-coverage uplift" = raw Vesica-RAG coverage.** The PRECOMMIT.md
+   decision table phrases the diagnostic as an "uplift" with a "+5 pp" bar.
+   The contriever baseline forms no Vesicas, so its coverage is identically
+   zero; the uplift over that baseline is just the raw Vesica-RAG coverage.
+   `scripts/09` therefore checks `coverage ≥ 0.05` (GO) / `≥ 0.03` (WEAK).
+   Recorded here so it's not a silent reinterpretation.
+2. **Split-result handling.** The table requires *both* conditions for GO
+   and *both* for WEAK GO; it doesn't explicitly say what to do when one
+   metric clears GO and the other is below WEAK. `scripts/09` buckets such
+   a result at the lower tier (per the literal "both required" reading) but
+   attaches a "SPLIT RESULT — human adjudication" note in RESULTS.md rather
+   than silently deciding. If a real split occurs, it's a candidate for a
+   PRECOMMIT.md amendment to sharpen the rule.
