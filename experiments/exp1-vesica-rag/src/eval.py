@@ -164,38 +164,3 @@ def bootstrap_paired_difference(
         ci_high=float(np.percentile(means, 97.5)),
         n_resamples=n_resamples,
     )
-
-
-# ─── Per-stratum summary helper ─────────────────────────────────────────────
-
-@dataclass(frozen=True)
-class StratumSummary:
-    name: str
-    n: int
-    baseline_f1: BootstrapResult
-    treatment_f1: BootstrapResult
-    lift_f1: BootstrapResult
-    baseline_em: BootstrapResult
-    treatment_em: BootstrapResult
-    lift_em: BootstrapResult
-
-
-def summarize_stratum(
-    name: str,
-    baseline_f1: NDArray[np.float64],
-    treatment_f1: NDArray[np.float64],
-    baseline_em: NDArray[np.float64],
-    treatment_em: NDArray[np.float64],
-    n_resamples: int = 10_000,
-    seed: int = 1337,
-) -> StratumSummary:
-    return StratumSummary(
-        name=name,
-        n=baseline_f1.shape[0],
-        baseline_f1=bootstrap_mean(baseline_f1, n_resamples, seed),
-        treatment_f1=bootstrap_mean(treatment_f1, n_resamples, seed + 1),
-        lift_f1=bootstrap_paired_difference(baseline_f1, treatment_f1, n_resamples, seed + 2),
-        baseline_em=bootstrap_mean(baseline_em, n_resamples, seed + 3),
-        treatment_em=bootstrap_mean(treatment_em, n_resamples, seed + 4),
-        lift_em=bootstrap_paired_difference(baseline_em, treatment_em, n_resamples, seed + 5),
-    )
