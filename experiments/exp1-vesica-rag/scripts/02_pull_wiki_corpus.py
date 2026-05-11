@@ -104,7 +104,7 @@ def main() -> int:
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     audit = audit_supporting_fact_coverage(
-        DATA_DIR / "hotpotqa_dev.jsonl",
+        DATA_DIR / "hotpotqa_validation.jsonl",
         DATA_DIR / "hotpotqa_train.jsonl",
         title_index,
     )

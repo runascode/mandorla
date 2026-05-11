@@ -74,7 +74,11 @@ def dump_split(split: str, out_path: Path) -> int:
 
 
 def main() -> int:
-    n_val = dump_split("validation", DATA_DIR / "hotpotqa_dev.jsonl")
+    # File names use the HuggingFace split names ("validation", "train") so
+    # they line up with src.data.load_hotpotqa(split) → "hotpotqa_{split}.jsonl".
+    # (The paper / README call this the "dev" set; that's a colloquialism for
+    # the same split.)
+    n_val = dump_split("validation", DATA_DIR / "hotpotqa_validation.jsonl")
     n_train = dump_split("train", DATA_DIR / "hotpotqa_train.jsonl")
     print(f"\nDone. val={n_val} train={n_train}")
     # Sanity asserts from the published HotpotQA paper.
