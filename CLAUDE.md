@@ -54,7 +54,12 @@ trail.
 
 ### `LAB-NOTES.md` — chronological observations
 
-- **One per experiment.** Append-only, oldest at top.
+- **One per experiment**, in the experiment directory. Append-only, oldest
+  at top.
+- **One at the project root** for repo-wide events (identity / attribution
+  changes, infrastructure shifts, large dependency upgrades, cross-
+  experiment refactors). Use sparingly — experiment-specific findings
+  always go in the per-experiment file.
 - **Non-binding.** Nothing in this file changes the spec on its own — but
   `PRECOMMIT.md` amendments cite entries here when they are *triggered* by
   what is observed.
