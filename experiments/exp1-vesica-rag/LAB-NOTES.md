@@ -433,3 +433,46 @@ baselines, the decision rule, or the prompt/decoding config. The
 generator's `num_ctx=8192` was *considered* as a memory knob to drop
 (it doesn't change outputs — prompts are ~2500 tokens, well under both
 8192 and 4096), but left as-is since we reverted to sequential.
+
+### Follow-up the same day — parallel Ollama retried with a clean restart, still doesn't help
+
+The user cleared the deck: stopped the dev workload (it had grown to
+**54 node processes, 3 of them pegged at ~100–112 % CPU** — orphaned
+`unrelated dev` instances; killed all, freeing ~3 cores and ~7 GB), and
+authorized restarting Ollama. (The "Virtualization VM" in the active set
+turned out to be **a container VM**, configured `--cpus 14
+--memoryMiB 8192`; left running at the user's request.)
+
+So we retried the parallel path properly: stopped the baseline run cleanly
+(796 records preserved, resumable), killed `ollama serve`, restarted it
+with `OLLAMA_NUM_PARALLEL=4` (confirmed via `ollama ps` — model size went
+7 GB → 11 GB, the extra ~4 GB being 3 more KV-cache slots), re-launched
+`scripts/07` with `MANDORLA_N_WORKERS=4`.
+
+**It still didn't help.** The Ollama serve log shows the answer: with 4
+concurrent `/api/generate` requests, **each one takes ~18–20 s** (vs ~6 s
+solo), and they complete in batches of ~4 every ~20 s — i.e. ~0.2 q/s,
+the same as sequential. `ollama ps` shows "100 % GPU": the M4 Pro's Metal
+GPU is already fully saturated by a *single* request. Batched decoding for
+one 8B model on this GPU just splits the GPU's fixed token throughput
+across 4 sequences — same tokens/s in aggregate, 4× the per-request
+latency, more in-flight work to lose on a crash, and the OMP/oversubscription
+hazards. No win.
+
+**Reverted to sequential again** (`MANDORLA_N_WORKERS=1`), and restarted
+Ollama back to its default (no `OLLAMA_NUM_PARALLEL`) so it isn't holding
+~4 GB of idle KV-cache slots. The baseline run resumes from 796 records.
+
+**The bottom line on throughput:** this slice is GPU-bound at ~0.18 q/s,
+full stop. 7,405 questions × 2 conditions × ~5.5 s ≈ **~23 h of pure
+Ollama time** — that's the irreducible cost given the pinned model
+(`llama3.1:8b-instruct-q5_K_M`, PRECOMMIT.md A) and the pinned 25-chunk
+context (PRECOMMIT.md C1). A faster model or fewer chunks would speed it
+up but would change the experiment. So: ~10 h more for the baseline,
+~12 h for the Vesica-RAG run, then scoring — result by ~midday tomorrow
+(2026-05-12). Thorough beats fast.
+
+The `n_workers` code path stays in the tree (94 tests green incl.
+parallel-path tests) — it's correct, it's just not useful on this
+hardware. On a machine with a faster GPU or a setup where the LLM isn't
+GPU-bound, `MANDORLA_N_WORKERS=N` + `OLLAMA_NUM_PARALLEL=N` would help.
