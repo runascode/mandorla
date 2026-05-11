@@ -157,3 +157,52 @@ def test_load_done_ids_empty_file(tmp_path: Path) -> None:
     assert _load_done_ids(out) == set()
     out.write_text("")
     assert _load_done_ids(out) == set()
+
+
+def test_run_eval_parallel_processes_all_questions(tmp_path: Path) -> None:
+    """With n_workers > 1, every question is processed exactly once; output
+    order is not guaranteed but the id set is complete and unique."""
+    out = tmp_path / "run.jsonl"
+    gen = FakeGenerator()
+    questions = make_questions(20)
+    run_eval(
+        condition="parcond",
+        questions=questions,
+        encode_fn=fake_encode,
+        retrieve_fn=fake_retrieve,
+        chunk_text_fn=fake_chunk_text,
+        generator=gen,
+        out_path=out,
+        n_workers=4,
+        log_every=100,
+    )
+    lines = out.read_text().strip().splitlines()
+    ids = [json.loads(l)["id"] for l in lines]
+    assert len(ids) == 20
+    assert set(ids) == {f"q{i}" for i in range(20)}
+    # Each question's record carries the right extra field
+    by_id = {json.loads(l)["id"]: json.loads(l) for l in lines}
+    assert by_id["q5"]["marker"] == "ret::q5"
+    assert by_id["q5"]["prediction"] == "answer-for::question 5?"
+
+
+def test_run_eval_parallel_resumes(tmp_path: Path) -> None:
+    """Parallel path also honors the resume set."""
+    out = tmp_path / "run.jsonl"
+    with out.open("w") as f:
+        for i in range(5):
+            f.write(json.dumps({"id": f"q{i}", "prediction": "old"}) + "\n")
+    gen = FakeGenerator()
+    run_eval(
+        condition="c",
+        questions=make_questions(12),
+        encode_fn=fake_encode,
+        retrieve_fn=fake_retrieve,
+        chunk_text_fn=fake_chunk_text,
+        generator=gen,
+        out_path=out,
+        n_workers=4,
+    )
+    assert len(gen.calls) == 7   # q5..q11
+    ids = [json.loads(l)["id"] for l in out.read_text().strip().splitlines()]
+    assert set(ids) == {f"q{i}" for i in range(12)}

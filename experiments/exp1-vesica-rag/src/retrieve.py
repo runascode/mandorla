@@ -265,12 +265,18 @@ class VesicaRetriever:
     beta: float = DEFAULT_BETA
     min_log_volume: Optional[float] = None   # τ_v in log space
 
-    # Index from chunk_id → row in BoxStore.centers, built lazily once.
+    # chunk_id → row in BoxStore.centers. Built eagerly in __post_init__ so it's
+    # safe to call _box_idx() from multiple threads (the runner parallelizes
+    # the per-question loop).
     _chunk_id_to_box_idx: dict[str, int] = field(default_factory=dict, repr=False)
 
-    def _box_idx(self, chunk_id: str) -> int:
+    def __post_init__(self) -> None:
         if not self._chunk_id_to_box_idx:
-            self._chunk_id_to_box_idx = {cid: i for i, cid in enumerate(self.boxes.chunk_ids)}
+            self._chunk_id_to_box_idx = {
+                cid: i for i, cid in enumerate(self.boxes.chunk_ids)
+            }
+
+    def _box_idx(self, chunk_id: str) -> int:
         return self._chunk_id_to_box_idx[chunk_id]
 
     def retrieve(

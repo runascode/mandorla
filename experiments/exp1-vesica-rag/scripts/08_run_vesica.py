@@ -22,6 +22,7 @@ and scripts/06 (τ_v calibration) to have run against the full corpus.
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -48,6 +49,7 @@ MAX_TOTAL_CHUNKS = 25
 
 CONDITION = "vesica_rag"
 OUT_PATH = REPO_ROOT / "results" / "raw" / "vesica.jsonl"
+N_WORKERS = int(os.environ.get("MANDORLA_N_WORKERS", "4"))
 
 
 def main() -> int:
@@ -119,7 +121,7 @@ def main() -> int:
         p = titles.passage(chunk_id)
         return p["title"], p["text"]
 
-    print(f"\nRunning condition {CONDITION!r} → {OUT_PATH}", flush=True)
+    print(f"\nRunning condition {CONDITION!r} → {OUT_PATH} (n_workers={N_WORKERS})", flush=True)
     run_eval(
         condition=CONDITION,
         questions=questions,
@@ -128,6 +130,7 @@ def main() -> int:
         chunk_text_fn=chunk_text,
         generator=generator,
         out_path=OUT_PATH,
+        n_workers=N_WORKERS,
     )
     return 0
 
