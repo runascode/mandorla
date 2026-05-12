@@ -77,3 +77,48 @@ user.email = runascode@protonmail.com
 
 Set per-repo (not globally), so the user's `runascode` identity on other
 projects is unaffected.
+
+---
+
+## 2026-05-12 — Hardware / performance lessons (carry forward to future experiments)
+
+From the Experiment 1 slice runs on the dev machine (Apple M4 Pro, 48 GB).
+Detailed accounts are in `experiments/exp1-vesica-rag/LAB-NOTES.md`; the
+takeaways for *any* future experiment on this class of hardware:
+
+1. **LLM inference is GPU-bound and does not parallelize on a single GPU.**
+   Ollama running an 8B Q5 model already saturates the Metal GPU with one
+   request ("100 % GPU" in `ollama ps`). Setting `OLLAMA_NUM_PARALLEL > 1`
+   and issuing concurrent requests just splits the GPU's fixed token
+   throughput across sequences — same aggregate tokens/s, N× per-request
+   latency, more in-flight work to lose on a crash. The fix isn't
+   concurrency; it's a smaller/faster model, fewer prompt tokens, or a
+   faster GPU. Plan wall-clock as `n_questions × tokens_per_question ÷
+   GPU_tokens_per_sec`, not `÷ n_workers`. Freeing RAM/CPU helps general
+   machine health but won't move this number.
+
+2. **Brute-force array scans dominate when they're O(N) per query.** The
+   slice's per-Vesica box-containment step scanned the full 5.23M × 64
+   box-centers array (`(centers >= min) & (centers <= max)).all(axis=1)`)
+   ~5×/question — ~4–5 s/question of numpy, half the Vesica-RAG run's
+   per-question time. Anything that does a linear scan over millions of
+   rows inside a per-item loop should use a spatial index (FAISS over the
+   relevant vectors, then filter) instead — it's the *same* computation,
+   done in ms instead of seconds. Build the helper indices up front.
+
+3. **`uv run`-launched env vars don't reach a running service.**
+   `OLLAMA_NUM_PARALLEL` (and similar) are read by `ollama serve` at
+   start-up; setting them on the client process does nothing. If you need
+   a server-side knob changed, restart the server.
+
+4. **macOS bundled-OpenMP conflict (`OMP Error #15`).** `faiss-cpu` and
+   `torch` each ship their own `libomp` on macOS arm64; importing faiss
+   *before* torch crashes the process. Load torch first (e.g. via the
+   module that imports it), faiss later, and set FAISS thread counts after
+   both are loaded. Don't `import faiss` at module top in a script that
+   also pulls in torch.
+
+5. **Per-worker OpenMP oversubscription.** If you ever do run a worker
+   pool, pin FAISS/BLAS to 1 OpenMP thread per worker
+   (`faiss.omp_set_num_threads(1)`, `OMP_NUM_THREADS=1`); otherwise each
+   worker fans out across all cores and the machine thrashes.
