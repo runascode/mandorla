@@ -6,15 +6,18 @@ JSONL record. The loop is resumable: on restart, question ids already
 present in the output file are skipped, so a crash at question 5,000
 costs only the questions after it.
 
-The loop can run with a thread pool (`n_workers > 1`). The LLM call (Ollama)
-dominates wall-clock; running several in parallel against an Ollama server
-configured with `OLLAMA_NUM_PARALLEL > 1` gives a near-linear speedup. The
+Concurrency: with more than one worker, a fixed set of worker threads pull
+questions off a shared queue. Each worker is bound to one `OllamaGenerator`
+— so heterogeneous backends (e.g. a local Ollama and a slower one on
+another machine) self-balance: a faster worker finishes its question and
+pulls the next one sooner, so it ends up processing more of them. The
 contriever encode is serialized with a lock (PyTorch MPS is not guaranteed
-thread-safe); it's fast (~50 ms) so this doesn't bottleneck. FAISS search
-and the numpy box operations are read-only on shared arrays and safe under
-concurrent reads. Each output line is written under a lock. Output order
-is not guaranteed under `n_workers > 1`, which is fine — scripts/09 matches
-records by question id.
+thread-safe; the encode is ~50 ms so this isn't the bottleneck). FAISS
+search and the numpy box ops are read-only on shared arrays and safe under
+concurrent reads. Each output line is written under a lock. Output order is
+not guaranteed under concurrency — scripts/09 matches records by question
+id, so order is irrelevant, and a crash loses only the in-flight workers'
+questions.
 
 scripts/07 and scripts/08 supply the condition-specific bits:
   - `retrieve_fn(question, q_vec) -> (chunk_ids, extra_record_fields)`
@@ -27,12 +30,12 @@ record schema common to both conditions.
 from __future__ import annotations
 
 import json
+import queue
 import threading
 import time
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from .data import HotpotQuestion
 from .generate import OllamaGenerator, RetrievedChunk
@@ -71,12 +74,20 @@ def run_eval(
     encode_fn: "EncodeFn",
     retrieve_fn: "RetrieveFn",
     chunk_text_fn: "ChunkTextFn",
-    generator: OllamaGenerator,
+    generator: Optional[OllamaGenerator] = None,
+    generators: Optional[list[OllamaGenerator]] = None,
     out_path: Path,
     log_every: int = 50,
     n_workers: int = 1,
 ) -> None:
     """Run one condition over all (not-yet-done) questions, appending JSONL.
+
+    Supply exactly one of:
+      - `generator` + `n_workers`: that many worker threads, all using the
+        one generator (homogeneous backend).
+      - `generators`: one worker thread per generator, each bound to its own
+        generator (heterogeneous backends — they self-balance via the work
+        queue). `n_workers` is ignored in this case.
 
     Record schema (per line):
       {
@@ -91,17 +102,22 @@ def run_eval(
         "error":               None, or the generation error string,
         ...                    extra fields from retrieve_fn,
       }
-
-    With `n_workers > 1`, questions are processed by a thread pool; output
-    line order is not preserved (scripts/09 matches by id).
     """
+    if generators is not None and len(generators) > 0:
+        worker_gens = list(generators)
+    elif generator is not None:
+        worker_gens = [generator] * max(1, n_workers)
+    else:
+        raise ValueError("run_eval requires generator= or generators=")
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     done = _load_done_ids(out_path)
     if done:
         print(f"  resuming: {len(done)} questions already recorded in {out_path.name}")
     todo = [q for q in questions if q.id not in done]
+    host_labels = [getattr(g, "host_label", "?") for g in worker_gens]
     print(f"  {len(todo)} questions to process for condition={condition!r} "
-          f"(n_workers={n_workers})", flush=True)
+          f"({len(worker_gens)} worker(s), hosts={host_labels})", flush=True)
     if not todo:
         return
 
@@ -110,8 +126,7 @@ def run_eval(
     write_lock = threading.Lock()
     state = {"done": 0}
 
-    def build_record(q: HotpotQuestion) -> dict:
-        # MPS encode is serialized; it's fast and the parallel win is the LLM call.
+    def build_record(q: HotpotQuestion, gen: OllamaGenerator) -> dict:
         with encode_lock:
             q_vec = encode_fn(q.question)
         chunk_ids, extra = retrieve_fn(q, q_vec)
@@ -119,17 +134,17 @@ def run_eval(
         for cid in chunk_ids:
             title, text = chunk_text_fn(cid)
             chunks.append(RetrievedChunk(chunk_id=cid, title=title, text=text))
-        gen = generator.answer_question(q.question, chunks)
+        result = gen.answer_question(q.question, chunks)
         return {
             "id": q.id,
             "condition": condition,
             "question": q.question,
             "gold_answer": q.answer,
-            "prediction": gen.answer,
+            "prediction": result.answer,
             "type": q.type,
             "level": q.level,
             "retrieved_chunk_ids": list(chunk_ids),
-            "error": gen.error,
+            "error": result.error,
             **extra,
         }
 
@@ -146,16 +161,29 @@ def run_eval(
                       flush=True)
 
     with out_path.open("a") as f:
-        if n_workers <= 1:
+        if len(worker_gens) == 1:
+            gen = worker_gens[0]
             for q in todo:
-                emit(f, build_record(q))
+                emit(f, build_record(q, gen))
         else:
-            with ThreadPoolExecutor(max_workers=n_workers) as pool:
-                futures = [pool.submit(build_record, q) for q in todo]
-                # Write each record as soon as it completes (unordered) — a
-                # crash loses only the in-flight ~n_workers, not a buffer.
-                for fut in as_completed(futures):
-                    emit(f, fut.result())
+            work_q: "queue.Queue[HotpotQuestion]" = queue.Queue()
+            for q in todo:
+                work_q.put(q)
+
+            def worker(gen: OllamaGenerator) -> None:
+                while True:
+                    try:
+                        q = work_q.get_nowait()
+                    except queue.Empty:
+                        return
+                    emit(f, build_record(q, gen))
+
+            threads = [threading.Thread(target=worker, args=(g,), daemon=True)
+                       for g in worker_gens]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
 
     elapsed_min = (time.time() - t0) / 60.0
     print(f"  done. processed {len(todo)} questions in {elapsed_min:.1f} min "

@@ -80,14 +80,20 @@ class GenerationResult:
 
 @dataclass
 class OllamaGenerator:
-    """Stateless callable around the Ollama daemon.
+    """Callable around an Ollama daemon (local or over the network).
 
-    Constructed once per script run; reused across questions. Each `generate`
-    call is independent (no chat history). Retries on transient errors with
-    exponential backoff.
+    Constructed once per host per run; reused across questions; thread-safe
+    (each `generate` call is independent — no chat history — and the
+    underlying `ollama.Client` is a thin HTTP wrapper). Retries on transient
+    errors with exponential backoff.
+
+    `host`: None → the ollama library default (OLLAMA_HOST env var, else
+    `http://localhost:11434`); otherwise a `host:port` or `http://host:port`
+    string. Used to fan eval generation across multiple machines.
     """
 
     model: str = DEFAULT_MODEL
+    host: Optional[str] = None
     temperature: float = DEFAULT_TEMPERATURE
     seed: int = DEFAULT_SEED
     top_p: float = DEFAULT_TOP_P
@@ -96,6 +102,7 @@ class OllamaGenerator:
     max_retries: int = 3
     initial_backoff_seconds: float = 1.0
     _options: dict = field(default_factory=dict, init=False, repr=False)
+    _client: "ollama.Client" = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._options = {
@@ -105,16 +112,23 @@ class OllamaGenerator:
             "num_ctx": self.num_ctx,
             "num_predict": self.num_predict,
         }
+        # Client construction does no network I/O; it just configures the
+        # base URL and an httpx session.
+        self._client = ollama.Client(host=self.host) if self.host else ollama.Client()
 
     def options_dict(self) -> dict:
         return dict(self._options)
+
+    @property
+    def host_label(self) -> str:
+        return self.host or "default"
 
     def generate(self, prompt: str) -> GenerationResult:
         last_err: Optional[Exception] = None
         backoff = self.initial_backoff_seconds
         for _ in range(self.max_retries):
             try:
-                resp = ollama.generate(
+                resp = self._client.generate(
                     model=self.model,
                     prompt=prompt,
                     system=SYSTEM_PROMPT,
@@ -136,7 +150,7 @@ class OllamaGenerator:
             prompt=prompt,
             model=self.model,
             options=self.options_dict(),
-            error=f"{type(last_err).__name__}: {last_err}",
+            error=f"{type(last_err).__name__}: {last_err} (host={self.host_label})",
         )
 
     def answer_question(

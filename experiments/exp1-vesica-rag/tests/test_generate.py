@@ -80,3 +80,22 @@ def test_system_prompt_constant_used() -> None:
     the contract explicit so we don't drift between Modelfile and code."""
     assert "extractive" in SYSTEM_PROMPT
     assert "shortest possible answer span" in SYSTEM_PROMPT
+
+
+def test_host_label_default() -> None:
+    assert OllamaGenerator().host_label == "default"
+
+
+def test_host_label_set() -> None:
+    g = OllamaGenerator(host="http://192.168.1.179:11434")
+    assert g.host_label == "http://192.168.1.179:11434"
+    assert g.host == "http://192.168.1.179:11434"
+
+
+def test_construction_with_host_does_no_network_io() -> None:
+    """Constructing a generator pointed at an unreachable host must not raise
+    — the client is lazy; only generate() touches the network. Uses
+    TEST-NET-1 (192.0.2.0/24, RFC 5737), guaranteed unroutable, valid port."""
+    g = OllamaGenerator(host="http://192.0.2.1:11434")
+    assert g.host_label == "http://192.0.2.1:11434"
+    assert g.options_dict()["temperature"] == 0.0

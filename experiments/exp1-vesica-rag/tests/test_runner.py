@@ -20,9 +20,12 @@ from src.runner import _load_done_ids, run_eval
 
 class FakeGenerator:
     """Stand-in for OllamaGenerator — returns a deterministic canned answer
-    and records the chunks it was handed."""
+    and records the chunks it was handed. `label` is echoed into the answer
+    so multi-generator tests can see which generator served which question."""
 
-    def __init__(self) -> None:
+    def __init__(self, label: str = "fake") -> None:
+        self.label = label
+        self.host_label = label
         self.calls: list[tuple[str, list[RetrievedChunk]]] = []
 
     def answer_question(self, question: str, chunks: list[RetrievedChunk]) -> GenerationResult:
@@ -30,7 +33,7 @@ class FakeGenerator:
         return GenerationResult(
             answer=f"answer-for::{question}",
             prompt="(fake prompt)",
-            model="fake-model",
+            model=f"fake-model::{self.label}",
             options={},
             error=None,
         )
@@ -206,3 +209,59 @@ def test_run_eval_parallel_resumes(tmp_path: Path) -> None:
     assert len(gen.calls) == 7   # q5..q11
     ids = [json.loads(l)["id"] for l in out.read_text().strip().splitlines()]
     assert set(ids) == {f"q{i}" for i in range(12)}
+
+
+def test_run_eval_multi_generator_all_questions_covered(tmp_path: Path) -> None:
+    """generators=[g1, g2]: every question processed exactly once, split
+    across the two generators (each gets at least one)."""
+    out = tmp_path / "run.jsonl"
+    g1, g2 = FakeGenerator("g1"), FakeGenerator("g2")
+    run_eval(
+        condition="multigen",
+        questions=make_questions(20),
+        encode_fn=fake_encode,
+        retrieve_fn=fake_retrieve,
+        chunk_text_fn=fake_chunk_text,
+        generators=[g1, g2],
+        out_path=out,
+        log_every=100,
+    )
+    ids = [json.loads(l)["id"] for l in out.read_text().strip().splitlines()]
+    assert len(ids) == 20
+    assert set(ids) == {f"q{i}" for i in range(20)}
+    # both generators saw work, total = 20
+    assert len(g1.calls) + len(g2.calls) == 20
+    assert len(g1.calls) > 0 and len(g2.calls) > 0
+
+
+def test_run_eval_multi_generator_resumes(tmp_path: Path) -> None:
+    out = tmp_path / "run.jsonl"
+    with out.open("w") as f:
+        for i in range(8):
+            f.write(json.dumps({"id": f"q{i}", "prediction": "old"}) + "\n")
+    g1, g2 = FakeGenerator("g1"), FakeGenerator("g2")
+    run_eval(
+        condition="c",
+        questions=make_questions(14),
+        encode_fn=fake_encode,
+        retrieve_fn=fake_retrieve,
+        chunk_text_fn=fake_chunk_text,
+        generators=[g1, g2],
+        out_path=out,
+    )
+    assert len(g1.calls) + len(g2.calls) == 6  # q8..q13
+    ids = [json.loads(l)["id"] for l in out.read_text().strip().splitlines()]
+    assert set(ids) == {f"q{i}" for i in range(14)}
+
+
+def test_run_eval_requires_a_generator(tmp_path: Path) -> None:
+    import pytest
+    with pytest.raises(ValueError):
+        run_eval(
+            condition="c",
+            questions=make_questions(1),
+            encode_fn=fake_encode,
+            retrieve_fn=fake_retrieve,
+            chunk_text_fn=fake_chunk_text,
+            out_path=tmp_path / "x.jsonl",
+        )

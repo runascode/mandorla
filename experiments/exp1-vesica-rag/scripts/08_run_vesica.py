@@ -28,7 +28,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.data import REPO_ROOT, TitleIndex, load_hotpotqa
+# NB: do not import faiss at module top — see scripts/07 comment (OMP Error #15
+# when faiss loads before torch). FAISS thread pinning happens in main().
+
+from src.data import REPO_ROOT, TitleIndex, load_hotpotqa  # noqa: E402
 from src.generate import OllamaGenerator
 from src.index_io import (
     QueryEncoder,
@@ -49,13 +52,23 @@ MAX_TOTAL_CHUNKS = 25
 
 CONDITION = "vesica_rag"
 OUT_PATH = REPO_ROOT / "results" / "raw" / "vesica.jsonl"
-N_WORKERS = int(os.environ.get("MANDORLA_N_WORKERS", "4"))
+N_WORKERS = int(os.environ.get("MANDORLA_N_WORKERS", "1"))
+# Comma-separated Ollama hosts; one worker per host (a host repeated = that
+# many workers on it). Empty → single local generator with N_WORKERS workers.
+# Example: "localhost:11434,localhost:11434,http://192.168.1.179:11434"
+_OLLAMA_HOSTS = [h.strip() for h in os.environ.get("MANDORLA_OLLAMA_HOSTS", "").split(",") if h.strip()]
 
 
 def main() -> int:
+    n_eff_workers = len(_OLLAMA_HOSTS) if _OLLAMA_HOSTS else N_WORKERS
+
     print("Loading FAISS retriever (loads ~16 GB into RAM)...", flush=True)
     faiss_retriever = load_faiss_retriever()
     print(f"  {faiss_retriever.n} passages indexed")
+    if n_eff_workers > 1:
+        import faiss  # safe here: torch already loaded via src.index_io
+        faiss.omp_set_num_threads(1)
+        print(f"  FAISS OpenMP threads pinned to 1 ({n_eff_workers} workers)")
 
     print("Loading 64-D box store...", flush=True)
     boxes = load_box_store()
@@ -82,7 +95,15 @@ def main() -> int:
     questions = list(load_hotpotqa("validation"))
     print(f"  {len(questions)} dev questions")
 
-    generator = OllamaGenerator()
+    if _OLLAMA_HOSTS:
+        generators = [OllamaGenerator(host=h) for h in _OLLAMA_HOSTS]
+        single_generator = None
+        print(f"  Ollama hosts: {[g.host_label for g in generators]}")
+    else:
+        generators = None
+        single_generator = OllamaGenerator()
+        print(f"  Ollama host: default (single), n_workers={N_WORKERS}")
+
     vr = VesicaRetriever(
         baseline=faiss_retriever,
         boxes=boxes,
@@ -121,14 +142,15 @@ def main() -> int:
         p = titles.passage(chunk_id)
         return p["title"], p["text"]
 
-    print(f"\nRunning condition {CONDITION!r} → {OUT_PATH} (n_workers={N_WORKERS})", flush=True)
+    print(f"\nRunning condition {CONDITION!r} → {OUT_PATH} ({n_eff_workers} worker(s))", flush=True)
     run_eval(
         condition=CONDITION,
         questions=questions,
         encode_fn=encoder.encode,
         retrieve_fn=retrieve,
         chunk_text_fn=chunk_text,
-        generator=generator,
+        generator=single_generator,
+        generators=generators,
         out_path=OUT_PATH,
         n_workers=N_WORKERS,
     )
