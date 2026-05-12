@@ -122,3 +122,19 @@ takeaways for *any* future experiment on this class of hardware:
    pool, pin FAISS/BLAS to 1 OpenMP thread per worker
    (`faiss.omp_set_num_threads(1)`, `OMP_NUM_THREADS=1`); otherwise each
    worker fans out across all cores and the machine thrashes.
+
+6. **A multi-GB resident index scanned per query is a single-machine
+   memory wall.** The slice's 16 GB `IndexFlatIP` (5.23M × 768, exact
+   brute-force search) is touched in full on every query. One worker → it
+   stays resident, fine. Two concurrent workers searching it → the OS
+   pages it in and out from disk per search and throughput collapses (we
+   saw ~7× *slower* than single-worker). You can't parallelize over such
+   an index without N× the RAM. A second machine doesn't help either —
+   the bottleneck (retrieval, holding the big index) is exactly the part
+   that can't be replicated cheaply; only generation offloads, and only
+   if it's *pipelined* off the retrieval thread (one scan in flight at a
+   time → index stays resident → a separate pool of generation threads,
+   some pointed at the remote host, consumes a queue). The cheaper fixes:
+   shrink the index (IVF/PQ/HNSW instead of flat, accepting some recall
+   loss) so it fits with headroom, or accept single-worker throughput.
+   Decide this *before* the index is built.

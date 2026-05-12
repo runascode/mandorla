@@ -476,3 +476,57 @@ The `n_workers` code path stays in the tree (94 tests green incl.
 parallel-path tests) — it's correct, it's just not useful on this
 hardware. On a machine with a faster GPU or a setup where the LLM isn't
 GPU-bound, `MANDORLA_N_WORKERS=N` + `OLLAMA_NUM_PARALLEL=N` would help.
+
+### Follow-up, later 2026-05-12 — second-machine (cyberdyne) attempt: reverted, memory-bound
+
+The user offered a second machine — **cyberdyne**, an Apple M4 / 16 GB on
+the LAN, running Ollama with `llama3.1:8b-instruct-q5_K_M` (verified
+reachable; benchmarked at ~12 s for a ~1,400-token prompt, ~2× slower per
+request than the local M4 Pro — fewer GPU cores, 16 GB RAM).
+
+We added a multi-host path (commit `0b3628f`): `OllamaGenerator(host=…)`,
+`run_eval(generators=[…])` with queue-fed worker threads each bound to one
+host, so a `[local, cyberdyne]` pair self-balances. Restarted `scripts/08`
+with `MANDORLA_OLLAMA_HOSTS="http://localhost:11434,http://192.168.1.179:11434"`
+(2 workers), resuming from ~1,825 records.
+
+**It ran slower than the single-worker version** — ~4 records in 5.5 min
+(~0.012 q/s vs the single-worker 0.09). Root cause: **memory thrashing.**
+The retrieval step holds a ~16 GB `IndexFlatIP` and does a brute-force
+scan over all 5.23M × 768 vectors *per query*. With 2 workers issuing
+concurrent FAISS searches — plus 2 concurrent box-containment numpy scans
+(each allocating ~1 GB of transient bool arrays) plus the local Ollama
+(~7–8 GB) plus the box store (~2.7 GB) plus the TitleIndex maps (~2 GB) —
+the working set exceeded 48 GB. The OS paged the index in and out from
+disk per search (RSS observed at ~2.8 GB when it should be ~22 GB;
+`sample` showed worker threads blocked on locks/kernel waits, not
+computing). The single-worker run doesn't thrash because only one search
+touches the 16 GB index at a time, so it stays resident.
+
+**Why two machines can't help here (as-is):** the bottleneck that would
+benefit from parallelism is *retrieval* (the worker holding the 16 GB
+index), but parallelizing retrieval blows the RAM budget on a 48 GB box.
+Generation (the GPU-bound part) *could* be offloaded to cyberdyne, but
+only if it's decoupled from retrieval — i.e. a **pipeline**: one
+retrieval thread (single FAISS search at a time → index stays resident)
+feeding a queue, N generation threads (one local, one cyberdyne)
+consuming it. The current design ties retrieve→generate within each
+worker, so adding workers adds concurrent retrievals. The pipeline split
+is a real refactor; combined with the box-containment FAISS optimization
+(declined for this slice) it would get the Vesica-RAG run to ~0.25 q/s.
+Neither is in scope — the user's call is to let the single-worker local
+run finish.
+
+**Reverted to single-worker local** (`MANDORLA_N_WORKERS=1`), resuming
+from ~1,831 records. ~17 h more at 0.09 q/s. The multi-host code
+(`OllamaGenerator(host=…)`, `run_eval(generators=…)`, queue-fed workers)
+stays in the tree (100 tests green) — it's correct and would work on a
+machine with enough RAM to keep the index resident under concurrent
+searches, or once retrieval is pipelined off the worker threads.
+
+Lesson for future experiments (also folded into the project-level
+`LAB-NOTES.md`): a multi-GB resident index that's fully scanned per query
+is a hard single-machine memory constraint — you can't parallelize over
+it without N× the RAM, and a second machine doesn't help unless it has
+its own copy of the index. Either shrink the index (ANN/IVF/PQ instead of
+flat — at some recall cost), or pipeline so only one scan is in flight.
