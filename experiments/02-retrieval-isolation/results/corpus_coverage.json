@@ -1,0 +1,207 @@
+{
+  "hotpotqa": {
+    "n_total": 7405,
+    "n_with_gold": 7405,
+    "n_no_gold_titles": 0,
+    "n_all_gold_in_corpus": 7405,
+    "n_any_gold_in_corpus": 7405,
+    "rate_all_in_corpus": 1.0,
+    "rate_any_in_corpus": 1.0,
+    "hop_distribution": {
+      "2": 7405
+    },
+    "top_missing_titles": []
+  },
+  "2wiki": {
+    "n_total": 12576,
+    "n_with_gold": 12576,
+    "n_no_gold_titles": 0,
+    "n_all_gold_in_corpus": 10497,
+    "n_any_gold_in_corpus": 12458,
+    "rate_all_in_corpus": 0.8346851145038168,
+    "rate_any_in_corpus": 0.990617048346056,
+    "hop_distribution": {
+      "2": 9825,
+      "4": 2751
+    },
+    "top_missing_titles": [
+      [
+        "Nathan Juran",
+        9
+      ],
+      [
+        "Duke Louis of W\u00fcrttemberg",
+        9
+      ],
+      [
+        "Robert North Bradbury",
+        7
+      ],
+      [
+        "Infante Francisco de Paula, Duke of C\u00e1diz",
+        6
+      ],
+      [
+        "Wojciech Has",
+        6
+      ],
+      [
+        "Baha al-Dawla",
+        5
+      ],
+      [
+        "Victor Janson",
+        5
+      ],
+      [
+        "Philip of Ibelin (1180\u20131227)",
+        3
+      ],
+      [
+        "T. Prakash Rao",
+        3
+      ],
+      [
+        "Mark Robson (film director)",
+        3
+      ],
+      [
+        "Spring Storms",
+        3
+      ],
+      [
+        "Hugh Despenser the younger",
+        3
+      ],
+      [
+        "Jeanne of Bar, Countess of Marle and Soissons",
+        3
+      ],
+      [
+        "Stolen Identity",
+        3
+      ],
+      [
+        "Mary of Burgundy, Duchess of Cleves",
+        3
+      ],
+      [
+        "Girls in White",
+        3
+      ],
+      [
+        "Edward Despenser (died 1342)",
+        3
+      ],
+      [
+        "George Blair (director)",
+        3
+      ],
+      [
+        "Bernard B. Ray",
+        3
+      ],
+      [
+        "The Golden Trail",
+        3
+      ]
+    ]
+  },
+  "musique": {
+    "n_total": 2417,
+    "n_with_gold": 2417,
+    "n_no_gold_titles": 0,
+    "n_all_gold_in_corpus": 2212,
+    "n_any_gold_in_corpus": 2416,
+    "rate_all_in_corpus": 0.9151841125362019,
+    "rate_any_in_corpus": 0.9995862639635912,
+    "hop_distribution": {
+      "2": 1237,
+      "1": 54,
+      "3": 745,
+      "4": 381
+    },
+    "top_missing_titles": [
+      [
+        "Hindus",
+        23
+      ],
+      [
+        "Warner Records",
+        23
+      ],
+      [
+        "2014 United States Senate elections",
+        23
+      ],
+      [
+        "2020 AFC U-23 Championship qualification",
+        23
+      ],
+      [
+        "2004 United States presidential election",
+        13
+      ],
+      [
+        "Celebrity Big Brother (American TV series)",
+        11
+      ],
+      [
+        "2010 United States House of Representatives elections",
+        9
+      ],
+      [
+        "Sports in the New York metropolitan area",
+        6
+      ],
+      [
+        "2017 Conservative Party of Canada leadership election",
+        6
+      ],
+      [
+        "Best Day Ever (mixtape)",
+        5
+      ],
+      [
+        "Thelma & Louise",
+        4
+      ],
+      [
+        "I Can Only Imagine (film)",
+        4
+      ],
+      [
+        "The Last Supper (Leonardo)",
+        4
+      ],
+      [
+        "Koerner, Ray & Glover",
+        4
+      ],
+      [
+        "Who Wants to Be a Millionaire (American game show)",
+        3
+      ],
+      [
+        "2018\u201319 NHL season",
+        2
+      ],
+      [
+        "2008 United States presidential election",
+        2
+      ],
+      [
+        "R359 (South Africa)",
+        2
+      ],
+      [
+        "Mr. Peabody & Sherman",
+        2
+      ],
+      [
+        "Indo-Pakistani War of 1947\u20131948",
+        2
+      ]
+    ]
+  }
+}

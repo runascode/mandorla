@@ -1,0 +1,24 @@
+[project]
+name = "exp02-retrieval-isolation"
+version = "0.1.0"
+description = "Mandorla Experiment 02 — pure-retrieval test of the intersection primitive across HotpotQA fullwiki, 2WikiMultiHop, and MuSiQue-Ans dev. No LLM in the loop."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "box-embeddings>=0.1.0",
+    "datasets>=4.8.5",
+    "faiss-cpu>=1.13.2",
+    "numpy>=2.4.4",
+    "pydantic>=2.13.4",
+    "python-ulid>=3.1.0",
+    "sentence-transformers>=5.4.1",
+    "torch>=2.11.0",
+    "tqdm>=4.67.3",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
