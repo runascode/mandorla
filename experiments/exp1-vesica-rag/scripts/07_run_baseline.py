@@ -19,7 +19,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.data import REPO_ROOT, TitleIndex, load_hotpotqa
+# NB: do not import faiss at module top — torch (pulled in by src.index_io
+# below) and faiss each bundle their own libomp on macOS, and importing faiss
+# *before* torch triggers OMP Error #15. Loading torch first (via the
+# src.index_io import) and faiss later (inside load_faiss_retriever) is the
+# order that works. We set the FAISS thread count inside main(), after the
+# retriever is loaded, only when running with a worker pool.
+
+from src.data import REPO_ROOT, TitleIndex, load_hotpotqa  # noqa: E402
 from src.generate import OllamaGenerator
 from src.index_io import QueryEncoder, load_faiss_retriever
 from src.runner import run_eval
@@ -36,6 +43,13 @@ def main() -> int:
     print("Loading FAISS retriever (loads ~16 GB into RAM)...", flush=True)
     retriever = load_faiss_retriever()
     print(f"  {retriever.n} passages indexed")
+    if N_WORKERS > 1:
+        # Each worker issues a FAISS search; without this, every search fans
+        # out across all cores → n_workers×cores oversubscription that starves
+        # Ollama. One OpenMP thread per worker keeps total FAISS threads bounded.
+        import faiss  # safe here: torch already loaded via src.index_io
+        faiss.omp_set_num_threads(1)
+        print(f"  FAISS OpenMP threads pinned to 1 (n_workers={N_WORKERS})")
 
     print("Loading corpus title index (title↔chunk_id, chunk_id→passage)...", flush=True)
     titles = TitleIndex()
