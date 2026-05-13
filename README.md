@@ -5,7 +5,7 @@
 
 **[Read the paper](./mandorla.md)** · **[runascode.com/mandorla](https://runascode.com/mandorla)** · **arXiv: TBD**
 
-*Last updated: 2026-05-11 — see [Status](#status) for live state.*
+*Last updated: 2026-05-13 — see [Status](#status) for live state.*
 
 ---
 
@@ -33,13 +33,14 @@ If they don't hold, the paper says so in §3.3, and the negative result gets rep
 |---|---|
 | Position paper v1.0 (`mandorla.md`, `tex/mandorla.tex`) | ✅ Published — 2026-05-10 |
 | arXiv preprint | 🟡 Pending endorsement |
-| Site at runascode.com/mandorla | 🟡 Coming online |
-| **Experiment 1 — Vesica-RAG (slice)** ([`experiments/exp1-vesica-rag/`](./experiments/exp1-vesica-rag/)) | 🟡 **In progress** — corpus encoding (~5.2M passages); pipeline code complete, awaiting indices |
-| Experiment 1 — Vesica-RAG (formal, MuSiQue + 2WikiMultiHop) | 🔲 Not started — gated on slice go/no-go |
-| Experiment 2 — Hex-Vote | 🔲 Not started |
-| Experiment 3 — Mandorla Curriculum | 🔲 Not started |
+| Site at runascode.com/mandorla | ✅ Live |
+| **Experiment 01 — Vesica-RAG screening slice** ([`experiments/exp1-vesica-rag/`](./experiments/exp1-vesica-rag/)) | ✅ **Complete — NO-GO** (2026-05-13). See [`RESULTS.md`](./experiments/exp1-vesica-rag/results/RESULTS.md) and the post-hoc [`DIAGNOSTIC.md`](./experiments/exp1-vesica-rag/results/DIAGNOSTIC.md). |
+| **Experiment 02 — Retrieval-isolation test** ([`experiments/02-retrieval-isolation/`](./experiments/02-retrieval-isolation/)) | 🟡 **Planned** — PRECOMMIT locked 2026-05-13; isolates the primitive from LLM saturation by removing generation from the loop. |
+| Experiment 03 — Hex-Vote ([`experiments/03-hex-vote/`](./experiments/03-hex-vote/)) | 🔲 Design sketch — pre-PRECOMMIT, blocking decisions in README. |
+| Experiment 04 — Mandorla Curriculum ([`experiments/04-curriculum/`](./experiments/04-curriculum/)) | 🔲 Design sketch — pre-PRECOMMIT, blocking decisions in README. |
+| Vesica-RAG (formal, MuSiQue + 2WikiMultiHop, full RAG) | 🔲 Gated on Exp 02 verdict + reselected downstream generator. |
 
-The slice screening run is what's active right now. Its full design lock is in [`experiments/exp1-vesica-rag/PRECOMMIT.md`](./experiments/exp1-vesica-rag/PRECOMMIT.md); the day-by-day log is in [`experiments/exp1-vesica-rag/LAB-NOTES.md`](./experiments/exp1-vesica-rag/LAB-NOTES.md).
+**Where the program stands as of 2026-05-13.** Experiment 01 ran end-to-end on HotpotQA dev (7,405 questions) and returned NO-GO (F1 lift −1.64 pts, vesica-coverage 4.36%; both pre-registered bars not cleared). The post-hoc diagnostic on the raw outputs shows the screening setup was effectively an LLM-saturation test: on the 323 questions where the gold pair *was* surfaced as a candidate Vesica, F1 lift was still null (−0.01, CI −0.04, +0.02). The next experiment ([`02-retrieval-isolation`](./experiments/02-retrieval-isolation/)) is locked and tests the primitive on retrieval-side metrics across three multi-hop datasets with no LLM in the loop. Experiments 03 and 04 remain falsifiable tests of *different projections* of Thesis 1 and Thesis 3 and are ready to be locked when prioritized.
 
 ## How research discipline is enforced here
 
@@ -82,22 +83,23 @@ mandorla/
 │   ├── mandorla.tex             # arXiv LaTeX source
 │   └── mandorla.pdf             # compiled paper
 └── experiments/
-    └── exp1-vesica-rag/         # 🟡 in progress
-        ├── PRECOMMIT.md         # binding design (locked 2026-05-10)
-        ├── LAB-NOTES.md         # experiment-level chronological log
-        ├── BENCHMARKS.md        # throughput / cost measurements
-        ├── README.md            # operator-facing reproduce guide
-        ├── pyproject.toml
-        ├── uv.lock
-        ├── .python-version      # 3.12
-        ├── Modelfile            # pinned Ollama config
-        ├── src/                 # Region/Vesica primitives, retrieval,
-        │                        # eval, generation, calibration
-        ├── tests/               # pytest unit tests
-        ├── scripts/             # 01..09 numbered pipeline scripts
-        ├── data/                # gitignored — HF cache, HotpotQA dumps
-        ├── index/               # gitignored — FAISS, box indices
-        └── results/             # raw per-question JSONL + RESULTS.md
+    ├── exp1-vesica-rag/         # ✅ complete — NO-GO
+    │   ├── PRECOMMIT.md         # binding design (locked 2026-05-10)
+    │   ├── LAB-NOTES.md         # experiment-level chronological log
+    │   ├── BENCHMARKS.md        # throughput / cost measurements
+    │   ├── README.md            # operator-facing reproduce guide
+    │   ├── pyproject.toml, uv.lock, .python-version, Modelfile
+    │   ├── src/                 # Region/Vesica primitives, retrieval,
+    │   │                        # eval, generation, calibration
+    │   ├── tests/               # pytest unit tests
+    │   ├── scripts/             # 01..10 numbered pipeline scripts
+    │   ├── data/                # gitignored — HF cache, HotpotQA dumps
+    │   ├── index/               # gitignored — FAISS, box indices
+    │   └── results/             # raw per-question JSONL,
+    │                            # RESULTS.md, DIAGNOSTIC.md
+    ├── 02-retrieval-isolation/  # 🟡 planned — PRECOMMIT locked 2026-05-13
+    ├── 03-hex-vote/             # 🔲 design sketch (pre-PRECOMMIT)
+    └── 04-curriculum/           # 🔲 design sketch (pre-PRECOMMIT)
 ```
 
 ## Cite

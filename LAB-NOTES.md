@@ -138,3 +138,96 @@ takeaways for *any* future experiment on this class of hardware:
    shrink the index (IVF/PQ/HNSW instead of flat, accepting some recall
    loss) so it fits with headroom, or accept single-worker throughput.
    Decide this *before* the index is built.
+
+---
+
+## 2026-05-13 — Experiment 01 complete; branching decision
+
+### What happened
+
+The Experiment 01 screening slice ran end-to-end on HotpotQA dev
+(7,405 questions). Headline F1 lift **−1.64** (95% CI −2.34, −0.93);
+vesica-coverage **4.36%** (CI 3.90, 4.82). Per the locked
+`exp1-vesica-rag/PRECOMMIT.md` decision rule (F1 lift bar +1.0 weak /
++2.0 GO **and** coverage bar +3 / +5 pp, both required for any GO
+outcome), this is **NO-GO**. Full numbers and provenance in
+`exp1-vesica-rag/results/RESULTS.md`; commit `5a3b34a`.
+
+### Diagnostic on the raw outputs (not part of the binding decision)
+
+Three hypotheses on offer for why a +4.36 pp vesica-coverage signal
+didn't move F1:
+
+- **H1 — coverage is the bottleneck.** Falsified. On the n=323
+  coverage-hit subset (gold pair surfaced as a candidate Vesica),
+  F1 lift is **−0.01 (CI −0.04, +0.02)**. Bridge & covered (n=190):
+  −0.02 (CI −0.06, +0.02). Comparison & covered (n=133): 0.00 (CI
+  −0.06, +0.06). At these n's a real ≥+1 F1 lift would have been
+  detectable; it is not present.
+- **H2 — Vesicas don't help the LLM.** Supported by the same evidence:
+  on the perfect-coverage subset, no lift.
+- **H3 — Vesicas displace useful baseline context.** Quantified. Mean
+  baseline context: 25.0 chunks. Mean Vesica-RAG context: 23.8 chunks.
+  Mean overlap: 8.3. Mean baseline-only chunks dropped: 16.7.
+  Gold-pair-in-context drops from **41.39%** (baseline) to **30.74%**
+  (Vesica-RAG) — an 11 pp cost from displacement. But, per H1, even
+  preserving the gold pair would not have moved F1.
+
+The screening was effectively an **LLM-saturation test**: Llama-3.1-8B
+at top-25 dense retrieval on HotpotQA dev already extracts essentially
+all the signal that the intersection primitive (B2 density-extent
+boxes over a 64-D random projection of contriever) could deliver. The
+slice's design confounded two separable questions (does the primitive
+retrieve different evidence; does the LLM benefit) and answered the
+second well but couldn't speak to the first.
+
+Full diagnostic at `exp1-vesica-rag/results/DIAGNOSTIC.md`.
+
+### Lesson #7 — pre-commits must isolate the variable they intend to test
+
+The screening slice's `PRECOMMIT.md` was correct for the question it
+asked ("does Vesica-RAG produce better answers on HotpotQA dev"). But
+the *thesis-level* claim it was implicitly testing ("does the
+intersection primitive surface better evidence") required isolating
+retrieval from downstream consumption. The slice produced a clean
+answer to the wrong question.
+
+Going forward: every future PRECOMMIT must include an explicit
+sub-section on **what the experiment confounds with what** and an
+explicit decision about whether to isolate or accept the confound.
+If a future experiment's downstream model is plausibly saturated at
+the baseline retrieval, the experiment is *not* testing the retrieval
+claim and that must be stated.
+
+### Branching decision (the queue now)
+
+- **Experiment 02 — retrieval-isolation** is locked
+  (`experiments/02-retrieval-isolation/PRECOMMIT.md`, 2026-05-13). It
+  tests the primitive on Pair-Recall@25 across three multi-hop
+  datasets (HotpotQA fullwiki, 2WikiMultiHop, MuSiQue-Ans dev) with
+  *no LLM in the loop*. Reuses the FAISS + box indices bit-for-bit
+  from Exp 01. Decision rule: ≥+5 pp on all three for GO, ≥+3 pp on
+  ≥2 of 3 (no dataset worse by >1 pp) for WEAK GO, else NO-GO. Budget:
+  one week.
+- **Experiment 03 — Hex-Vote** and **Experiment 04 — Mandorla
+  Curriculum** are scaffolded as design sketches
+  (`experiments/03-hex-vote/README.md` and
+  `experiments/04-curriculum/README.md`) with the blocking decisions
+  that must be resolved before each gets its PRECOMMIT lock. Neither
+  depends on Experiment 02's verdict for *correctness*, but Experiment
+  02's verdict will drive *prioritization*:
+  - If Exp 02 is GO → the retrieval-form of the thesis survives →
+    follow up with B3 (learned box head) before committing to Exp 03
+    or 04.
+  - If Exp 02 is NO-GO → the in-query intersection primitive is dead
+    in this projection → Exp 03 (Hex-Vote) becomes the highest-
+    priority surviving falsifiable test.
+
+### Note on the published slice post
+
+The post at `runascode.com/results/vesica-rag-slice` (and the slice's
+`RESULTS.md`) remains binding and unchanged per `PRECOMMIT.md` ship
+discipline. The diagnostic and the next-experiment decision live in
+the repo, not in the slice's `RESULTS.md`, so the audit chain stays
+clean: the slice's numbers are what they are; what we *did with* those
+numbers is its own document.

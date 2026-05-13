@@ -1,0 +1,262 @@
+{
+  "n": 7405,
+  "slices": {
+    "all": {
+      "name": "all",
+      "n": 7405,
+      "baseline_f1": {
+        "point_estimate": 0.4568929835123197,
+        "ci_low": 0.4464855890939189,
+        "ci_high": 0.4670974954453182,
+        "n_resamples": 10000
+      },
+      "vesica_f1": {
+        "point_estimate": 0.4405428864216502,
+        "ci_low": 0.4303605753471936,
+        "ci_high": 0.4507732981229419,
+        "n_resamples": 10000
+      },
+      "f1_lift": {
+        "point_estimate": -0.01635009709066962,
+        "ci_low": -0.02337277997419387,
+        "ci_high": -0.00933568908164014,
+        "n_resamples": 10000
+      },
+      "baseline_em": {
+        "point_estimate": 0.34530722484807563,
+        "ci_low": 0.33450033760972314,
+        "ci_high": 0.3562457798784605,
+        "n_resamples": 10000
+      },
+      "vesica_em": {
+        "point_estimate": 0.32964213369345036,
+        "ci_low": 0.31897366644159353,
+        "ci_high": 0.34044564483457124,
+        "n_resamples": 10000
+      }
+    },
+    "coverage_hit": {
+      "name": "vesica_covered=True",
+      "n": 323,
+      "baseline_f1": {
+        "point_estimate": 0.6421716123999287,
+        "ci_low": 0.5967680057787553,
+        "ci_high": 0.6868795681969392,
+        "n_resamples": 10000
+      },
+      "vesica_f1": {
+        "point_estimate": 0.6307237264938383,
+        "ci_low": 0.5829184854196237,
+        "ci_high": 0.6772790205648279,
+        "n_resamples": 10000
+      },
+      "f1_lift": {
+        "point_estimate": -0.01144788590609024,
+        "ci_low": -0.04343383897950462,
+        "ci_high": 0.020184354975376646,
+        "n_resamples": 10000
+      },
+      "baseline_em": {
+        "point_estimate": 0.49226006191950467,
+        "ci_low": 0.43653250773993807,
+        "ci_high": 0.544891640866873,
+        "n_resamples": 10000
+      },
+      "vesica_em": {
+        "point_estimate": 0.47987616099071206,
+        "ci_low": 0.42724458204334365,
+        "ci_high": 0.5356037151702786,
+        "n_resamples": 10000
+      }
+    },
+    "coverage_miss": {
+      "name": "vesica_covered=False",
+      "n": 7082,
+      "baseline_f1": {
+        "point_estimate": 0.448442687391069,
+        "ci_low": 0.43773368616084235,
+        "ci_high": 0.4593373604773085,
+        "n_resamples": 10000
+      },
+      "vesica_f1": {
+        "point_estimate": 0.4318690073841866,
+        "ci_low": 0.42130986041576196,
+        "ci_high": 0.44242355426254804,
+        "n_resamples": 10000
+      },
+      "f1_lift": {
+        "point_estimate": -0.016573680006882432,
+        "ci_low": -0.023778333761474913,
+        "ci_high": -0.009312742462492732,
+        "n_resamples": 10000
+      },
+      "baseline_em": {
+        "point_estimate": 0.3386049138661395,
+        "ci_low": 0.327449872917255,
+        "ci_high": 0.34961875176503815,
+        "n_resamples": 10000
+      },
+      "vesica_em": {
+        "point_estimate": 0.322790172267721,
+        "ci_low": 0.31191753741880823,
+        "ci_high": 0.3338040101666196,
+        "n_resamples": 10000
+      }
+    },
+    "bridge_coverage_hit": {
+      "name": "bridge & covered",
+      "n": 190,
+      "baseline_f1": {
+        "point_estimate": 0.680910118433338,
+        "ci_low": 0.623829825789965,
+        "ci_high": 0.7351616664209544,
+        "n_resamples": 10000
+      },
+      "vesica_f1": {
+        "point_estimate": 0.6608474617917341,
+        "ci_low": 0.6025739778367487,
+        "ci_high": 0.7162738709518895,
+        "n_resamples": 10000
+      },
+      "f1_lift": {
+        "point_estimate": -0.020062656641604008,
+        "ci_low": -0.05827161654135338,
+        "ci_high": 0.01780733082706766,
+        "n_resamples": 10000
+      },
+      "baseline_em": {
+        "point_estimate": 0.46842105263157896,
+        "ci_low": 0.4,
+        "ci_high": 0.5421052631578948,
+        "n_resamples": 10000
+      },
+      "vesica_em": {
+        "point_estimate": 0.45263157894736844,
+        "ci_low": 0.38421052631578945,
+        "ci_high": 0.5263157894736842,
+        "n_resamples": 10000
+      }
+    },
+    "bridge_coverage_miss": {
+      "name": "bridge & not covered",
+      "n": 5728,
+      "baseline_f1": {
+        "point_estimate": 0.41775096017907837,
+        "ci_low": 0.40633056589297867,
+        "ci_high": 0.42943416755417857,
+        "n_resamples": 10000
+      },
+      "vesica_f1": {
+        "point_estimate": 0.39664509452865043,
+        "ci_low": 0.3852856358777911,
+        "ci_high": 0.4081742333347833,
+        "n_resamples": 10000
+      },
+      "f1_lift": {
+        "point_estimate": -0.021105865650427998,
+        "ci_low": -0.028981211103851892,
+        "ci_high": -0.013405204633352208,
+        "n_resamples": 10000
+      },
+      "baseline_em": {
+        "point_estimate": 0.3009776536312849,
+        "ci_low": 0.28910614525139666,
+        "ci_high": 0.3130237430167598,
+        "n_resamples": 10000
+      },
+      "vesica_em": {
+        "point_estimate": 0.28229748603351956,
+        "ci_low": 0.2707751396648045,
+        "ci_high": 0.29399441340782123,
+        "n_resamples": 10000
+      }
+    },
+    "comparison_coverage_hit": {
+      "name": "comparison & covered",
+      "n": 133,
+      "baseline_f1": {
+        "point_estimate": 0.5868308894950576,
+        "ci_low": 0.5069935163690256,
+        "ci_high": 0.6659847176930034,
+        "n_resamples": 10000
+      },
+      "vesica_f1": {
+        "point_estimate": 0.5876898189254157,
+        "ci_low": 0.5082663477825725,
+        "ci_high": 0.6663452778772327,
+        "n_resamples": 10000
+      },
+      "f1_lift": {
+        "point_estimate": 0.0008589294303580019,
+        "ci_low": -0.0551551045723978,
+        "ci_high": 0.056773716397776536,
+        "n_resamples": 10000
+      },
+      "baseline_em": {
+        "point_estimate": 0.5263157894736842,
+        "ci_low": 0.44360902255639095,
+        "ci_high": 0.6090225563909775,
+        "n_resamples": 10000
+      },
+      "vesica_em": {
+        "point_estimate": 0.518796992481203,
+        "ci_low": 0.43609022556390975,
+        "ci_high": 0.6015037593984962,
+        "n_resamples": 10000
+      }
+    },
+    "comparison_coverage_miss": {
+      "name": "comparison & not covered",
+      "n": 1354,
+      "baseline_f1": {
+        "point_estimate": 0.5782818406187518,
+        "ci_low": 0.5536809296205919,
+        "ci_high": 0.6041075976206806,
+        "n_resamples": 10000
+      },
+      "vesica_f1": {
+        "point_estimate": 0.5808812472929837,
+        "ci_low": 0.5562450570297528,
+        "ci_high": 0.6048541789618991,
+        "n_resamples": 10000
+      },
+      "f1_lift": {
+        "point_estimate": 0.0025994066742320455,
+        "ci_low": -0.016625795993473313,
+        "ci_high": 0.02200033022832271,
+        "n_resamples": 10000
+      },
+      "baseline_em": {
+        "point_estimate": 0.4977843426883309,
+        "ci_low": 0.4704579025110783,
+        "ci_high": 0.5243722304283605,
+        "n_resamples": 10000
+      },
+      "vesica_em": {
+        "point_estimate": 0.49409158050221563,
+        "ci_low": 0.46824224519940916,
+        "ci_high": 0.5206794682422452,
+        "n_resamples": 10000
+      }
+    }
+  },
+  "context_overlap": {
+    "mean_context_overlap": 8.302633355840648,
+    "median_context_overlap": 8.0,
+    "p10_context_overlap": 6.0,
+    "p90_context_overlap": 10.0,
+    "mean_baseline_only_chunks": 16.697366644159352,
+    "baseline_size_mean": 25.0,
+    "vesica_size_mean": 23.815530047265362
+  },
+  "gold_recall": {
+    "baseline_any_gold_in_context": 0.9204591492234976,
+    "vesica_any_gold_in_context": 0.8764348413234301,
+    "baseline_pair_in_context": 0.4139095205941931,
+    "vesica_pair_in_context": 0.3073598919648886
+  },
+  "type_counts": {
+    "bridge": 5918,
+    "comparison": 1487
+  }
+}
