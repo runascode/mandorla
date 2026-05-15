@@ -231,3 +231,83 @@ discipline. The diagnostic and the next-experiment decision live in
 the repo, not in the slice's `RESULTS.md`, so the audit chain stays
 clean: the slice's numbers are what they are; what we *did with* those
 numbers is its own document.
+
+---
+
+## 2026-05-15 — Experiment 02 complete; retrieval form of Thesis 2 closed
+
+### What happened
+
+Experiment 02 (retrieval-isolation) ran to completion: 22,398 dev
+questions across HotpotQA (7,405), 2WikiMultiHop (12,576), and
+MuSiQue-Ans (2,417); single worker; ~33 h wall; retrieval-only, no
+LLM. Decisive **NO-GO**.
+
+Pair-Recall@25 lift (Vesica-augmented − contriever baseline):
+
+| Dataset | Lift | 95% CI |
+|---|---|---|
+| HotpotQA | −10.65 pp | (−11.41, −9.91) |
+| 2Wiki | −6.99 pp | (−7.52, −6.48) |
+| MuSiQue | −3.23 pp | (−4.01, −2.48) |
+
+Every CI is clear of zero on the negative side; every secondary
+metric (Pair-Recall@10, Any-Gold-Recall@25, RR-of-first-pair) is
+negative on all three. The intersection primitive doesn't fail
+neutrally — it *actively degrades* gold-pair retrieval, because the
+Vesica contained-chunk sets evict higher-value contriever hits under
+the 25-chunk budget. This is H3 from the slice diagnostic, now
+confirmed at the pure-retrieval level with no LLM confound.
+
+Internal-consistency check passed: HotpotQA baseline Pair-Recall@25
+(41.39%) equals the slice diagnostic's baseline gold-pair-in-context
+(41.39%) to the digit — two independently written pipelines agree.
+
+### Lesson #8 — a confounded NO-GO is worth de-confounding before pivoting
+
+Exp 01's NO-GO was real but appealable ("LLM saturation hid the
+signal"). The cheap, decisive move was not another full RAG variant
+but a *retrieval-only* test on more datasets — same indices, no LLM,
+~1 week of work. It converted an appealable negative into an
+unappealable one. When a screening result is confounded, the next
+experiment should remove the confound, not add scope. Doing this
+first prevented sinking weeks into B3 / formal-Exp-1 on a premise
+(the primitive retrieves better evidence) that was false all along.
+
+### Branching decision (the queue now)
+
+The retrieval form of Thesis 2 is **closed for this operationalization**
+(B2 density-extent boxes, contriever-derived 64-D random projection,
+in-query, no store). Two screening experiments, three datasets, two
+pipelines, headline + four secondary metrics — all negative,
+decisively so in Exp 02.
+
+- **Not pursued:** formal Vesica-RAG (full RAG on MuSiQue/2Wiki), B3
+  as a drop-in box swap. B3 *could* still be revisited, but only with
+  a redesigned retrieval-assembly that fixes the displacement
+  mechanism (greedy contained-chunk sets under a finite budget) — that
+  is a new experiment with a new PRECOMMIT, not a box swap, and it now
+  carries a heavier burden of proof (beat "actively harmful," not
+  "no signal").
+- **Highest-priority surviving test:** Experiment 03 (Hex-Vote).
+  Different projection of the thesis (multi-agent topology, Thesis 1),
+  entirely different infrastructure (LLM message-graph, no FAISS, no
+  16 GB index, no single-machine memory wall). Its blocking decisions
+  are enumerated in `experiments/03-hex-vote/README.md`; the next
+  PRECOMMIT lock should be there.
+- **Independently citable byproduct:** the LLM-saturation finding from
+  the Exp 01 diagnostic. It limits what HotpotQA-style RAG benchmarks
+  can teach about *any* retrieval intervention, not just Vesica-RAG.
+  Worth a standalone short writeup decoupled from the MANDORLA thesis;
+  it is the result here most likely to be cited by people who don't
+  share the MANDORLA priors.
+
+### Publication
+
+Per the published-results discipline, Exp 02's NO-GO is published the
+same way the slice's was. The slice blog post at
+`runascode.com/results/vesica-rag-slice` gets a second clearly-labeled
+follow-up section (the post text is additive-only, like the diagnostic
+section before it; the slice's binding numbers are never edited). The
+new Exp 02 numbers are their own `RESULTS.md` with their own producing
+commit, so the audit chain stays intact.

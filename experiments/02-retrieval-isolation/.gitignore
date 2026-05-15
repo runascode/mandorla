@@ -1,5 +1,9 @@
 data/
-results/raw/
 .venv/
 __pycache__/
 *.pyc
+
+# NB: results/raw/*.jsonl IS committed for this experiment — PRECOMMIT.md
+# §"What ship means" lists per-question retrieval outputs as a required
+# ship artifact (reproducibility: every metric re-derivable without the
+# ~33 h re-run). Largest file is ~30 MB, well under git/GitHub limits.

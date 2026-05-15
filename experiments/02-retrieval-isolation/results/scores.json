@@ -1,0 +1,255 @@
+{
+  "verdict": "NO-GO",
+  "summary": {
+    "hotpotqa": {
+      "n_scored": 7405,
+      "n_excluded": 0,
+      "corpus_coverage_rate_all_in_corpus": 1.0,
+      "baseline_pair_recall_at_25": {
+        "point_estimate": 0.4139095205941931,
+        "ci_low": 0.40270087778528024,
+        "ci_high": 0.425118163403106,
+        "n_resamples": 10000
+      },
+      "vesica_pair_recall_at_25": {
+        "point_estimate": 0.3073598919648886,
+        "ci_low": 0.29709318028359216,
+        "ci_high": 0.31789331532748144,
+        "n_resamples": 10000
+      },
+      "pair_recall_at_25_lift": {
+        "point_estimate": -0.10654962862930452,
+        "ci_low": -0.11411546252532073,
+        "ci_high": -0.09912221471978393,
+        "n_resamples": 10000
+      },
+      "baseline_pair_recall_at_10": {
+        "point_estimate": 0.3211343686698177,
+        "ci_low": 0.3104659014179608,
+        "ci_high": 0.3318062120189061,
+        "n_resamples": 10000
+      },
+      "vesica_pair_recall_at_10": {
+        "point_estimate": 0.2785955435516543,
+        "ci_low": 0.26833220796758944,
+        "ci_high": 0.2889939230249831,
+        "n_resamples": 10000
+      },
+      "pair_recall_at_10_lift": {
+        "point_estimate": -0.042538825118163405,
+        "ci_low": -0.04902093180283592,
+        "ci_high": -0.036056718433490884,
+        "n_resamples": 10000
+      },
+      "baseline_any_gold_recall_at_25": {
+        "point_estimate": 0.9204591492234976,
+        "ci_low": 0.9142471303173532,
+        "ci_high": 0.9264010803511141,
+        "n_resamples": 10000
+      },
+      "vesica_any_gold_recall_at_25": {
+        "point_estimate": 0.8764348413234301,
+        "ci_low": 0.8688723835246455,
+        "ci_high": 0.8837272113436867,
+        "n_resamples": 10000
+      },
+      "any_gold_recall_at_25_lift": {
+        "point_estimate": -0.04402430790006752,
+        "ci_low": -0.04888588791357191,
+        "ci_high": -0.03916272788656313,
+        "n_resamples": 10000
+      },
+      "baseline_rr_first_pair": {
+        "point_estimate": 0.10923313893765253,
+        "ci_low": 0.10537167616442815,
+        "ci_high": 0.11317501094596147,
+        "n_resamples": 10000
+      },
+      "vesica_rr_first_pair": {
+        "point_estimate": 0.09987627804535314,
+        "ci_low": 0.09588243366851187,
+        "ci_high": 0.10369879076623995,
+        "n_resamples": 10000
+      },
+      "rr_first_pair_lift": {
+        "point_estimate": -0.009356860892299413,
+        "ci_low": -0.010209193085892718,
+        "ci_high": -0.008503958708188621,
+        "n_resamples": 10000
+      },
+      "vesica_coverage": {
+        "point_estimate": 0.043619176232275486,
+        "ci_low": 0.038892640108035115,
+        "ci_high": 0.048345712356515864,
+        "n_resamples": 10000
+      }
+    },
+    "2wiki": {
+      "n_scored": 12576,
+      "n_excluded": 0,
+      "corpus_coverage_rate_all_in_corpus": 0.8346851145038168,
+      "baseline_pair_recall_at_25": {
+        "point_estimate": 0.25850826972010177,
+        "ci_low": 0.2506361323155216,
+        "ci_high": 0.26630089058524176,
+        "n_resamples": 10000
+      },
+      "vesica_pair_recall_at_25": {
+        "point_estimate": 0.18861323155216286,
+        "ci_low": 0.18177480916030533,
+        "ci_high": 0.19561068702290077,
+        "n_resamples": 10000
+      },
+      "pair_recall_at_25_lift": {
+        "point_estimate": -0.06989503816793893,
+        "ci_low": -0.07522264631043257,
+        "ci_high": -0.0648059796437659,
+        "n_resamples": 10000
+      },
+      "baseline_pair_recall_at_10": {
+        "point_estimate": 0.19394083969465647,
+        "ci_low": 0.18702290076335878,
+        "ci_high": 0.2009382951653944,
+        "n_resamples": 10000
+      },
+      "vesica_pair_recall_at_10": {
+        "point_estimate": 0.16555343511450382,
+        "ci_low": 0.15911259541984732,
+        "ci_high": 0.1720737913486005,
+        "n_resamples": 10000
+      },
+      "pair_recall_at_10_lift": {
+        "point_estimate": -0.02838740458015267,
+        "ci_low": -0.032522264631043254,
+        "ci_high": -0.02433206106870229,
+        "n_resamples": 10000
+      },
+      "baseline_any_gold_recall_at_25": {
+        "point_estimate": 0.9159510178117048,
+        "ci_low": 0.9111005089058524,
+        "ci_high": 0.9208810432569975,
+        "n_resamples": 10000
+      },
+      "vesica_any_gold_recall_at_25": {
+        "point_estimate": 0.8863708651399491,
+        "ci_low": 0.8807251908396947,
+        "ci_high": 0.8917799777353689,
+        "n_resamples": 10000
+      },
+      "any_gold_recall_at_25_lift": {
+        "point_estimate": -0.029580152671755726,
+        "ci_low": -0.032601781170483464,
+        "ci_high": -0.026479007633587785,
+        "n_resamples": 10000
+      },
+      "baseline_rr_first_pair": {
+        "point_estimate": 0.06467089068268103,
+        "ci_low": 0.06219471047126621,
+        "ci_high": 0.06716791498686725,
+        "n_resamples": 10000
+      },
+      "vesica_rr_first_pair": {
+        "point_estimate": 0.05849611893212118,
+        "ci_low": 0.05605545685928687,
+        "ci_high": 0.061001839445560736,
+        "n_resamples": 10000
+      },
+      "rr_first_pair_lift": {
+        "point_estimate": -0.006174771750559855,
+        "ci_low": -0.0067440027232222016,
+        "ci_high": -0.00561172698767483,
+        "n_resamples": 10000
+      },
+      "vesica_coverage": {
+        "point_estimate": 0.039440203562340966,
+        "ci_low": 0.03609852099236641,
+        "ci_high": 0.042938931297709926,
+        "n_resamples": 10000
+      }
+    },
+    "musique": {
+      "n_scored": 2417,
+      "n_excluded": 0,
+      "corpus_coverage_rate_all_in_corpus": 0.9151841125362019,
+      "baseline_pair_recall_at_25": {
+        "point_estimate": 0.06785270997103848,
+        "ci_low": 0.05792304509722797,
+        "ci_high": 0.07819611088125776,
+        "n_resamples": 10000
+      },
+      "vesica_pair_recall_at_25": {
+        "point_estimate": 0.03558129913115432,
+        "ci_low": 0.02813405047579644,
+        "ci_high": 0.0430285477865122,
+        "n_resamples": 10000
+      },
+      "pair_recall_at_25_lift": {
+        "point_estimate": -0.032271410839884156,
+        "ci_low": -0.04013239553165081,
+        "ci_high": -0.024824162184526273,
+        "n_resamples": 10000
+      },
+      "baseline_pair_recall_at_10": {
+        "point_estimate": 0.03764997931319818,
+        "ci_low": 0.030202730657840297,
+        "ci_high": 0.045510964004964835,
+        "n_resamples": 10000
+      },
+      "vesica_pair_recall_at_10": {
+        "point_estimate": 0.02689284236657013,
+        "ci_low": 0.02068680182043856,
+        "ci_high": 0.033512618949110465,
+        "n_resamples": 10000
+      },
+      "pair_recall_at_10_lift": {
+        "point_estimate": -0.01075713694662805,
+        "ci_low": -0.016135705419942078,
+        "ci_high": -0.005378568473314025,
+        "n_resamples": 10000
+      },
+      "baseline_any_gold_recall_at_25": {
+        "point_estimate": 0.6826644600744725,
+        "ci_low": 0.6640463384360777,
+        "ci_high": 0.7012825817128672,
+        "n_resamples": 10000
+      },
+      "vesica_any_gold_recall_at_25": {
+        "point_estimate": 0.5858502275548201,
+        "ci_low": 0.5664046338436077,
+        "ci_high": 0.605709557302441,
+        "n_resamples": 10000
+      },
+      "any_gold_recall_at_25_lift": {
+        "point_estimate": -0.09681423251965246,
+        "ci_low": -0.11005378568473315,
+        "ci_high": -0.08398841539098055,
+        "n_resamples": 10000
+      },
+      "baseline_rr_first_pair": {
+        "point_estimate": 0.012010915809354851,
+        "ci_low": 0.009657648537248186,
+        "ci_high": 0.01458781722932659,
+        "n_resamples": 10000
+      },
+      "vesica_rr_first_pair": {
+        "point_estimate": 0.009483646206065831,
+        "ci_low": 0.007196790436815139,
+        "ci_high": 0.012012177335233687,
+        "n_resamples": 10000
+      },
+      "rr_first_pair_lift": {
+        "point_estimate": -0.0025272696032890194,
+        "ci_low": -0.0032790515583411032,
+        "ci_high": -0.001798232574915803,
+        "n_resamples": 10000
+      },
+      "vesica_coverage": {
+        "point_estimate": 0.004551096400496483,
+        "ci_low": 0.002068680182043856,
+        "ci_high": 0.007447248655357882,
+        "n_resamples": 10000
+      }
+    }
+  },
+  "excluded": []
+}

@@ -1,8 +1,8 @@
 # Experiment 02 — Retrieval-Isolation Test of the Intersection Primitive
 
-*Last updated: 2026-05-13*
+*Last updated: 2026-05-15*
 
-**Status:** **planned**. PRECOMMIT.md locked 2026-05-13; no code has run against dev data.
+**Status:** ✅ **complete — decisive NO-GO** (2026-05-15). Pair-Recall@25 lift −10.65 / −6.99 / −3.23 pp (HotpotQA / 2Wiki / MuSiQue); every CI clear of zero, every secondary metric consistent. See [`results/RESULTS.md`](./results/RESULTS.md). PRECOMMIT.md locked 2026-05-13.
 **Paper section:** §3.1 (broader Experiment 1) + §3.3 (falsifiability).
 
 ## What this is

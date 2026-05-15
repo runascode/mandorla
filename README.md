@@ -5,7 +5,7 @@
 
 **[Read the paper](./mandorla.md)** · **[runascode.com/mandorla](https://runascode.com/mandorla)** · **arXiv: TBD**
 
-*Last updated: 2026-05-13 — see [Status](#status) for live state.*
+*Last updated: 2026-05-15 — see [Status](#status) for live state.*
 
 ---
 
@@ -35,12 +35,17 @@ If they don't hold, the paper says so in §3.3, and the negative result gets rep
 | arXiv preprint | 🟡 Pending endorsement |
 | Site at runascode.com/mandorla | ✅ Live |
 | **Experiment 01 — Vesica-RAG screening slice** ([`experiments/exp1-vesica-rag/`](./experiments/exp1-vesica-rag/)) | ✅ **Complete — NO-GO** (2026-05-13). See [`RESULTS.md`](./experiments/exp1-vesica-rag/results/RESULTS.md) and the post-hoc [`DIAGNOSTIC.md`](./experiments/exp1-vesica-rag/results/DIAGNOSTIC.md). |
-| **Experiment 02 — Retrieval-isolation test** ([`experiments/02-retrieval-isolation/`](./experiments/02-retrieval-isolation/)) | 🟡 **Planned** — PRECOMMIT locked 2026-05-13; isolates the primitive from LLM saturation by removing generation from the loop. |
-| Experiment 03 — Hex-Vote ([`experiments/03-hex-vote/`](./experiments/03-hex-vote/)) | 🔲 Design sketch — pre-PRECOMMIT, blocking decisions in README. |
+| **Experiment 02 — Retrieval-isolation test** ([`experiments/02-retrieval-isolation/`](./experiments/02-retrieval-isolation/)) | ✅ **Complete — decisive NO-GO** (2026-05-15). Pair-Recall@25 lift −10.65 / −6.99 / −3.23 pp (HotpotQA / 2Wiki / MuSiQue). See [`RESULTS.md`](./experiments/02-retrieval-isolation/results/RESULTS.md). |
+| Experiment 03 — Hex-Vote ([`experiments/03-hex-vote/`](./experiments/03-hex-vote/)) | 🔲 Design sketch — pre-PRECOMMIT. **Now the highest-priority surviving falsifiable test** (retrieval form of the thesis is closed). |
 | Experiment 04 — Mandorla Curriculum ([`experiments/04-curriculum/`](./experiments/04-curriculum/)) | 🔲 Design sketch — pre-PRECOMMIT, blocking decisions in README. |
-| Vesica-RAG (formal, MuSiQue + 2WikiMultiHop, full RAG) | 🔲 Gated on Exp 02 verdict + reselected downstream generator. |
+| Vesica-RAG (formal, full RAG) | ❌ Not pursued — retrieval form closed by Exp 02. Would require a redesigned retrieval-assembly (not just a better box) and a fresh PRECOMMIT. |
 
-**Where the program stands as of 2026-05-13.** Experiment 01 ran end-to-end on HotpotQA dev (7,405 questions) and returned NO-GO (F1 lift −1.64 pts, vesica-coverage 4.36%; both pre-registered bars not cleared). The post-hoc diagnostic on the raw outputs shows the screening setup was effectively an LLM-saturation test: on the 323 questions where the gold pair *was* surfaced as a candidate Vesica, F1 lift was still null (−0.01, CI −0.04, +0.02). The next experiment ([`02-retrieval-isolation`](./experiments/02-retrieval-isolation/)) is locked and tests the primitive on retrieval-side metrics across three multi-hop datasets with no LLM in the loop. Experiments 03 and 04 remain falsifiable tests of *different projections* of Thesis 1 and Thesis 3 and are ready to be locked when prioritized.
+**Where the program stands as of 2026-05-15.** Two screening experiments on the retrieval form of Thesis 2, both negative:
+
+- **Experiment 01** (HotpotQA dev, full RAG): NO-GO. F1 lift −1.64 pts. The post-hoc diagnostic showed the setup was confounded by LLM saturation (Llama-3.1-8B extracts near-everything from top-25 dense, so the retrieval signal — if any — couldn't show through).
+- **Experiment 02** (HotpotQA + 2Wiki + MuSiQue dev, retrieval-only, no LLM): **decisive NO-GO**. Pair-Recall@25 lift −10.65 / −6.99 / −3.23 pp; every CI clear of zero, every secondary metric consistent across two independently written pipelines. The intersection primitive doesn't merely fail to help retrieval — it actively degrades gold-pair recall, by displacing higher-value dense hits under a finite context budget.
+
+Together these close the **in-query intersection-as-Vesica retrieval primitive in this projection** (B2 density-extent boxes over a contriever-derived 64-D random projection, no store). The thesis is *not* falsified — only this operationalization of its retrieval form. The surviving falsifiable tests are different projections: **Experiment 03 (Hex-Vote)** tests the geometry in multi-agent topology (Thesis 1, entirely different infrastructure — LLM message-graph, no FAISS), and **Experiment 04 (Mandorla Curriculum)** tests it as a training objective (Thesis 3). The independently citable byproduct is the LLM-saturation finding from the Exp 01 diagnostic, which limits what HotpotQA-style RAG benchmarks can teach about *any* retrieval intervention.
 
 ## How research discipline is enforced here
 
