@@ -63,63 +63,97 @@ work; a synthetic *failure* is strong evidence Exp 04 is not worth the
 compute. The asymmetry is the point — this is a screening test, like the
 slice was.
 
-## The synthetic world
+## Design revision R1 — 2026-05-15 (recall+AND world abandoned)
 
-Designed so the "Vesica of two entities" has an *exact, checkable*
-ground truth: set intersection.
+> **Non-binding** (this is a pre-PRECOMMIT pilot) but the reason is
+> recorded per the project's discipline ethos.
+>
+> The original world emitted `E_i E_j SHARE P_k` and held out *pairs*
+> while exposing every entity individually. Empirically, plain CLM hit
+> held-out F1@G ≈ 0.994 by step 500 and 1.0 by step 1500 — with and
+> without the direct-attribute (`HAS`) paragraphs. The cause is
+> structural, not a hyperparameter: holding out *pairs* while each
+> entity is individually observed makes the held-out task equal to
+> "recall two attribute vectors, elementwise-AND them." Attention does
+> associative recall + AND natively in one step, so the baseline
+> ceilings and **Q2 becomes untestable** (no headroom to detect any
+> curriculum effect). Partner-sparsification was rejected because it
+> makes some entity attributes unobservable → probe ill-posed.
+>
+> R1 replaces the task with a **2-hop latent relational composition**
+> where the held-out generalization cannot be reduced to recall+AND,
+> and adds a third condition (generic-auxiliary control) so a positive
+> result can be attributed to the *intersection* specifically rather
+> than to "more training signal / more parameters." The sections below
+> describe the R1 design; the R0 description is superseded.
 
-- **Entities.** `N` entity tokens `E_0 … E_{N-1}`. Each entity `i` has a
-  fixed latent attribute vector `a_i ∈ {0,1}^K` — membership in `K`
-  binary properties. The `a_i` are sampled once, seeded, and fixed.
-- **Property tokens.** `P_0 … P_{K-1}`.
-- **Paragraphs.** A paragraph is a short token sequence asserting a
-  shared property: `E_i E_j SHARE P_k`, emitted iff `a_i[k] = a_j[k] =
-  1`. Filler/among other paragraph types are added so the corpus isn't
-  trivially one template (the model must actually represent entities,
-  not pattern-match a fixed slot).
-- **Ground-truth Vesica.** `V(E_i, E_j) := a_i AND a_j` (bitwise) — the
-  exact set of properties the pair shares. This is a *literal* set
-  intersection, the cleanest possible operationalization of "the
-  intersection of two regions."
+## The synthetic world (R1)
 
-## The compositional-transfer probe
+A 2-hop relational world. The held-out task requires *constructing and
+using an intermediate* the model was never directly asked for.
 
-- A subset of entity pairs `H` is **held out**: those pairs *never*
-  co-occur in any training paragraph (neither as `E_i E_j` nor `E_j
-  E_i`). The model sees every entity individually (in pairs with other
-  entities) but never the held-out pair *together*.
-- **Probe task.** For each held-out pair `(E_i, E_j) ∈ H`, predict
-  `V(E_i, E_j) = a_i AND a_j` — the shared-property set the model was
-  never shown for this pair.
-- **Metric.** Mean per-bit F1 (or exact-set accuracy) over `H`.
-- **Why this is the right probe.** A model that learned the *operation*
-  (represent each entity's attributes, intersect them) generalizes to
-  unseen pairs. A model that memorized co-occurrence cannot — the pair
-  was never in training. The gap between the curriculum model and the
-  CLM baseline *on `H`* is the pilot signal. (On *seen* pairs both can
-  win by memorization; that's the i.i.d. control, expected ≈ equal.)
+- **Entities** `E_0 … E_{N-1}`, each with a fixed seeded attribute
+  vector `a_i ∈ {0,1}^K`.
+- **Partner relation** `π`: a fixed seeded map with `π(i) ≠ i` (hop 1).
+- **Property tokens** `P_0 … P_{K-1}`. Relation tokens `ATTR`,
+  `PARTNER`, `QUERY`.
+- **Paragraph types:**
+  - `BOS E_i ATTR P_k EOS` for every `k` with `a_i[k]=1` — teaches each
+    entity's attributes directly (attribute *observation* is easy by
+    design; the difficulty is the composition, which is the lever R1
+    chose after R0 showed attribute-sparsity breaks well-posedness).
+  - `BOS E_i PARTNER E_{π(i)} EOS` for **all** `i` — teaches hop 1.
+  - `BOS E_i E_j QUERY P_k EOS` for every `k ∈ (a_{π(i)} AND a_j)` —
+    teaches the 2-hop composition, **only for non-held-out `i`**.
+- **Ground truth** `Q(i, j) := a_{π(i)} AND a_j`. Answering requires
+  hop 1 (`i → π(i)`) then hop 2 (intersect `a_{π(i)}` with `a_j`).
 
-This mirrors the structure of COGS/SCAN (train on parts, test on novel
-combinations) at a scale where ground truth is exact and a result is
-unambiguous.
+## The compositional-transfer probe (R1)
 
-## Conditions
+- A set of **entities `H`** is held out: for `i ∈ H` **no `QUERY`
+  paragraph is ever emitted** (in any loss). Their `ATTR` and `PARTNER`
+  facts *are* present, and `π(i)`'s `ATTR` facts are present. So every
+  *part* needed to answer `Q(i,j)` was taught as a separate single-hop
+  fact; the (i,j) query itself never was, for any j.
+- **comp-OOD (the signal).** For `i ∈ H`, predict `Q(i,j)` for sampled
+  `j`. The model cannot have memorized i's answer (i was never
+  queried); it must chain two separately-taught facts latently — the
+  exact OOD-composition the latent-multi-hop-reasoning literature shows
+  plain transformers struggle with.
+- **seen-entity control.** For `i ∉ H` with a *specific* `(i,j)` not in
+  training, predict `Q(i,j)`. i *was* queried (with other j), so a
+  shortcut-memorized `a_{π(i)}` can solve this. A curriculum gap that
+  appears here too is *not* novel-composition transfer.
+- **Metric.** F1@G (rank properties, cut at the true shared-set size).
+  Signal = curriculum − baseline on comp-OOD, net of the seen-entity
+  control gap **and** net of the generic-auxiliary control.
+
+## Conditions (R1 — three, not two)
 
 Same tiny transformer, same corpus, same seed, same token budget. Only
-the loss differs.
+the auxiliary loss differs. The third condition is the load-bearing
+addition R1 makes: the field already knows *generic* auxiliary
+objectives shift compositional generalization, so a curriculum win is
+only attributable to the intersection if it beats a capacity-matched
+*non-intersection* auxiliary objective.
 
-- **Baseline:** standard CLM (next-token) only.
-- **Curriculum:** CLM **plus** two auxiliary losses:
-  1. *Vesica prediction* — entity embeddings → per-entity box →
-     differentiable box-intersection → a head predicting the shared
-     property set `a_i AND a_j`. Trained only on *seen* pairs.
-  2. *Parent reconstruction* — intersection representation → reconstruct
-     `a_i` and `a_j` (denoising/invertibility; forbids the degenerate
-     collapse where the intersection discards parent information).
+- **Baseline:** CLM (next-token) only.
+- **Generic-aux control:** CLM **+** a capacity-matched auxiliary head
+  off the same hidden state, predicting a *non-compositional* target
+  (the queried entity's own attributes `a_i`) — adds parameters and
+  structured signal but no intersection geometry.
+- **Vesica curriculum:** CLM **+** two intersection losses, both read
+  off the model's **`QUERY`-position hidden state** (the representation
+  the model itself constructed — it is *not* handed `π(i)`; the only
+  extra supervision is the target, the same information CLM gets from
+  the `QUERY` paragraph's continuation):
+  1. *Vesica prediction* — box(query hidden state) ∩ box(`E_j`) → predict
+     `Q(i,j)`.
+  2. *Parent reconstruction* — intersection → reconstruct `a_{π(i)}`
+     and `a_j` (forbids the collapse that discards parent info).
 
-The probe is evaluated on **held-out pairs** for *both* conditions. The
-curriculum never sees held-out pairs in *any* loss, including the
-auxiliary ones — otherwise the probe would be contaminated.
+  Trained **only on non-held-out entities'** queries. Held-out entities
+  appear in *no* auxiliary loss — no probe contamination.
 
 ## What "pilot passed" means (decided now, before any run)
 

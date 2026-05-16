@@ -52,3 +52,47 @@ operating regime, the probe is well-posed and contamination-free, the
 harness is deterministic and multi-seed-ready. The full pilot run
 (Q1 stability over a real training horizon + Q2 across-seed signal)
 is the next step.
+
+---
+
+## 2026-05-15 — R0 world falsified by its own baseline; pivot to R1
+
+Launched the full run (3 seeds × 2 conditions × 4000 steps). Killed it
+at the first probe checkpoint.
+
+**Finding.** The R0 baseline (plain CLM, no curriculum) reached
+held-out F1@G ≈ 0.994 at step 500 and 1.0 by step 1500 — *with* the
+`HAS` paragraphs and again *without* them (SHARE-only). The synthetic
+task as designed is solved near-perfectly by a plain transformer, so
+there is zero headroom for a curriculum effect and **Q2 is untestable
+in the R0 design**.
+
+**Root cause (structural, not a hyperparameter).** Holding out entity
+*pairs* while every entity is individually observed reduces the
+held-out task to "recall two attribute vectors, elementwise-AND them."
+Attention does associative recall + elementwise AND natively in one
+step. So R0 was never testing compositional *construction*; it was
+testing recall+AND, which transformers already do. Partner-sparsifying
+to harden it was rejected: it makes some entities' properties
+unobservable from training co-occurrence → probe ill-posed (an
+unlearnable component would muddy Q2).
+
+This is the pilot working exactly as intended: ~30 min of compute
+caught a design flaw that would have made a 3-month experiment
+unattributable. It is itself a recorded result — the *obvious*
+synthetic isolator for this curriculum is dominated by trivial recall,
+which raises the bar for cleanly attributing any future COGS/SCAN
+effect to the intersection mechanism rather than to capacity.
+
+**Pivot — R1 (see PILOT.md "Design revision R1").** Task replaced with
+2-hop latent relational composition (`i → π(i)`, then intersect
+`a_{π(i)}` with `a_j`); held out at the *entity* level (held-out
+entities are never queried, so the held-out answer cannot be
+shortcut-memorized and must be composed latently from two separately-
+taught single-hop facts). Third condition added: a capacity-matched
+generic-auxiliary control, because the field already knows generic
+auxiliary objectives move compositional generalization — a curriculum
+win is only attributable to the *intersection* if it also beats the
+generic-aux control, not just plain CLM. Box module (box.py) is
+task-agnostic and carried over unchanged; synthetic/model/losses/probe
+rebuilt for R1.

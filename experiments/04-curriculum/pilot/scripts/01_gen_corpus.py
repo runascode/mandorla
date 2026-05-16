@@ -1,9 +1,4 @@
-"""Materialize the synthetic world and print/record its statistics.
-
-The corpus itself is regenerated deterministically in-memory by the
-train script; this script exists to make the world's shape inspectable
-and to record it as a provenance artifact.
-"""
+"""Materialize the R1 2-hop world and record its statistics."""
 
 from __future__ import annotations
 
@@ -24,26 +19,29 @@ def main() -> int:
     cfg = WorldConfig()
     w = World(cfg)
     corpus = w.corpus()
-    shared_sizes = [int(w.shared(i, j).sum()) for (i, j) in w.train_pairs]
-    held_sizes = [int(w.shared(i, j).sum()) for (i, j) in w.heldout_pairs]
+    ood = w.comp_ood_probe()
+    seen = w.seen_entity_control()
+    ans_sizes = [int(w.answer(i, j).sum()) for (i, j, _) in w.supervised_queries()]
+    ood_sizes = [int(a.sum()) for (_, _, a) in ood]
     stats = {
         "config": cfg.__dict__,
         "vocab_size": w.vocab_size,
         "n_paragraphs": len(corpus),
-        "n_train_pairs": len(w.train_pairs),
-        "n_heldout_pairs": len(w.heldout_pairs),
+        "n_trained_entities": len(w.trained_entities),
+        "n_heldout_entities": len(w.heldout_entities),
+        "n_supervised_queries": len(w.supervised_queries()),
         "mean_attrs_per_entity": float(w.A.sum(axis=1).mean()),
-        "mean_shared_size_train": float(np.mean(shared_sizes)),
-        "mean_shared_size_heldout": float(np.mean(held_sizes)),
-        "frac_heldout_pairs_with_nonempty_shared": float(
-            np.mean([s > 0 for s in held_sizes])
-        ),
+        "mean_answer_size_train": float(np.mean(ans_sizes)),
+        "mean_answer_size_comp_ood": float(np.mean(ood_sizes)),
+        "frac_comp_ood_nonempty": float(np.mean([s > 0 for s in ood_sizes])),
+        "n_comp_ood_examples": len(ood),
+        "n_seen_control_examples": len(seen),
+        "partner_is_derangement": bool(all(w.pi[i] != i for i in range(cfg.n_entities))),
     }
     out = EXP_ROOT / "results"
     out.mkdir(exist_ok=True)
     (out / "corpus_stats.json").write_text(json.dumps(stats, indent=2))
     print(json.dumps(stats, indent=2))
-    print(f"\nWrote {(out / 'corpus_stats.json').relative_to(EXP_ROOT)}")
     return 0
 
 
