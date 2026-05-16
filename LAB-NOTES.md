@@ -389,3 +389,64 @@ nothing, but the outcome is published, not buried. The slice blog post
 gets a third additive follow-up section (slice numbers never edited);
 the pilot's own numbers live in `pilot/LAB-NOTES.md` + `pilot/PILOT.md`
 "OUTCOME" with their producing commit, audit chain intact.
+
+---
+
+## 2026-05-15 — Operator pilot: last cheap escape closed; program complete
+
+The curriculum pilot's negative had one residual rescue: intersection
+was an *auxiliary* loss with a CLM bypass, so maybe
+intersection-as-the-actual-computation would help. A second pilot
+(`experiments/04-curriculum/pilot2-operator/`, rule locked in PILOT2.md
+before any number) put the intersection operator **on the critical
+path, no bypass, capacity-matched** against a point bottleneck, on an
+intersective AND task *and* a non-intersective control.
+
+Result: **DECISIVE NEGATIVE.** comp-OOD F1@G — AND: POINT 0.587±0.016
+vs INTERSECTION 0.573±0.008 (Δ −0.013); NONINT: POINT 0.540±0.011 vs
+INTERSECTION 0.525±0.011 (Δ −0.015). Negative on both tasks, all three
+seeds, capacity matched (int/point params 0.965). The intersection
+bottleneck loses to point composition *even on the task whose ground
+truth is literally a set intersection*.
+
+### Lesson #10 — the purity ratchet bottoming out IS the result
+
+The full series: every disconfirmation was met with a plausible "not
+tested fairly" rescue, and every rescue, once its condition was
+satisfied, produced another negative.
+
+| Negative | Rescue offered | Rescue satisfied by | Outcome |
+|---|---|---|---|
+| Exp 01 (RAG) | "LLM saturated" | Exp 02 (no LLM) | still negative |
+| Exp 02 (retrieval) | "borrowed point geometry" | curriculum pilot (trained from scratch) | still negative |
+| curriculum pilot | "only an auxiliary loss / bypass" | operator pilot (critical path, no bypass, capacity-matched) | still negative |
+| operator pilot | "architecture isn't intersection-native" | — (multi-year program, not a pilot) | not paid |
+
+The remaining rescue is not an experiment. And the *pattern* — an
+ever-purer, ever-costlier precondition demanded after each negative,
+each one failing the moment it is met — is the canonical behavior of a
+false thesis, not a mistested true one. The disciplined terminus is to
+name the pattern and stop, which is what this entry does.
+
+### Branching — terminal state of the cheap program
+
+- **Retrieval (Thesis 2):** closed (Exp 01 + 02).
+- **Construction (Thesis 3):** closed (curriculum pilot + operator
+  pilot), no PRECOMMIT, full Exp 04 not undertaken.
+- **Geometric primacy (Thesis 1 / Hex-Vote):** still untested,
+  independent infrastructure, but prior is now very low and it is no
+  longer "the momentum direction" — running it is only justified if the
+  goal is to fully resolve the thesis for the paper's sake, with the
+  same locked-rule + capacity-control discipline, and a cheap pilot
+  first. Not running it is equally defensible and is the
+  recommendation's default.
+- **Thesis-independent assets:** `findings/reader-saturation-hotpotqa.md`
+  (the portable result; ready to publish standalone) and the
+  methodology itself (a fully audited, pre-registered, repeatedly-
+  disconfirmed program — the rarer artifact).
+
+The recommended next action remains the saturation note's standalone
+publication and repositioning the position paper from manifesto to "a
+pre-registered program and its disconfirmation." The record now fully
+supports that reframing; it is the user's editorial call. No further
+experiment is the disciplined default.

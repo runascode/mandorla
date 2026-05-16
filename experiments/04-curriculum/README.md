@@ -4,7 +4,9 @@
 
 **Status:** ⛔ **pilot complete — do not pre-register.** The de-risking pilot ([`pilot/`](./pilot/)) returned Q1 PASS / Q2 NO: the box-intersection losses train flawlessly (vesica/parent → 0.000, bit-acc 1.000, no collapse) but the perfectly-learned intersection construction produces **no** held-out compositional transfer (curriculum comp-OOD 0.570 ± 0.017 vs. baseline 0.588 ± 0.014 vs. capacity-matched generic-aux control 0.580 ± 0.012 — curriculum marginally *worst*). The full Exp 04 (100–300M from-scratch, COGS/SCAN/ReCOGS, 8–12 weeks, multi-GPU) is **not** undertaken: the assumption it depends on failed in the cleanest possible isolation. See [`pilot/PILOT.md`](./pilot/PILOT.md) "OUTCOME" and [`pilot/LAB-NOTES.md`](./pilot/LAB-NOTES.md). No `PRECOMMIT.md` will be written.
 
-This does **not** formally falsify Thesis 3 (that needs the pre-registered benchmark run); it removes the warrant for that run. The design sketch below is retained for the record.
+A second, harder-controlled pilot ([`pilot2-operator/`](./pilot2-operator/)) then closed the residual loophole — that the curriculum pilot's negative might be because intersection was only an *auxiliary* loss the model could route around. Pilot 2 put the intersection operator **on the critical path, no bypass, capacity-matched against a point bottleneck**, on an intersective task *and* a non-intersective control. Locked verdict (rule fixed before any number): **DECISIVE NEGATIVE** — INTERSECTION does not beat a param-matched POINT bottleneck even on the task whose ground truth *is* a set intersection (Δ_AND = −0.013, negative on both tasks, all 3 seeds). See [`pilot2-operator/PILOT2.md`](./pilot2-operator/PILOT2.md) "Outcome".
+
+This does **not** formally falsify Thesis 3 (that needs the pre-registered benchmark run; and a fully intersection-*native architecture* is untested by design — a multi-year program, not a pilot). It does establish that **every cheap-to-screen form of the construction thesis has returned negative**, the last with the strongest controls of the series. The design sketch below is retained for the record.
 **Paper section:** §3.1 — Experiment 3.
 
 ## What this is

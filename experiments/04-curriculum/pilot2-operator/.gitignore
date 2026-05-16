@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Pilot run outputs are regenerable from seeded code; keep the repo
+# light. The pilot's conclusions live in LAB-NOTES.md + (if it passes)
+# the eventual 04-curriculum/PRECOMMIT.md, not in raw training logs.
+results/
