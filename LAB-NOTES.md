@@ -450,3 +450,42 @@ publication and repositioning the position paper from manifesto to "a
 pre-registered program and its disconfirmation." The record now fully
 supports that reframing; it is the user's editorial call. No further
 experiment is the disciplined default.
+
+---
+
+## 2026-05-16 — Hex-Vote: closed as NOT PURSUED (program formally ended)
+
+Decision recorded, not left ajar. **Experiment 03 (Hex-Vote, Thesis 1)
+is not pursued.** Rationale: every cheaper, more-directly-testable
+projection of the thesis returned negative (retrieval Exp 01+02;
+construction curriculum + operator pilots), each with the rescue
+pattern documented in Lesson #10. Hex-Vote's prior is correspondingly
+low; it runs on independent infrastructure but is the *weakest*
+operationalization (a shared message-log with geometric vocabulary
+attached), and running it would be momentum, not expectation. The
+disciplined default — stated repeatedly across the program — is to
+stop. This entry is that stop. Hex-Vote's `README.md` design sketch is
+retained for the record; it is not scheduled.
+
+The cheap-to-screen falsification program is **formally complete and
+closed.** Remaining work is not experimental:
+
+- `experiments/05-retrieval-sensitivity/` — a *measurement* (not a
+  thesis test) producing the central figure for the standalone
+  reader-saturation paper; design locked in its `DESIGN.md`.
+- The standalone paper (`findings/reader-saturation-hotpotqa.md`) →
+  external venue (negative-results / eval workshop short; see the
+  venue analysis). Thesis-independent; the durable output.
+- Repositioning the position paper from manifesto to "a pre-registered
+  program and its disconfirmation" — editorial, user's call.
+- Public-auditability fix: `runascode/mandorla` is private; the
+  published posts' audit links 404 for the public. Either make the
+  repo public (recommended — the program's central virtue is a
+  walkable public chain) or stop the posts claiming public
+  reproducibility. User's account, user's call; flagged, not yet done.
+
+No further hypothesis is queued. If a *new* thesis is pursued it starts
+its own pre-registered program; see the 2026-05-16 synthesis note on
+what the negatives positively showed (the parasitic-competence /
+masked-by-alternative-pathway direction) — recorded for the record,
+not scheduled.
