@@ -182,6 +182,33 @@ unlikely to work; do not pre-register.
 If both pass: write `experiments/04-curriculum/PRECOMMIT.md`, lock it,
 then proceed to the real benchmarks.
 
+## OUTCOME — 2026-05-15: Q1 PASS, Q2 NO → do not pre-register
+
+Full R1 run: 9 jobs (3 conditions × seeds 1337/1338/1339 × 6000 steps),
+MPS, ~1.5 h. Numbers and the stability table are in `LAB-NOTES.md`
+(2026-05-15 entries); summary:
+
+- **Q1 — PASS.** Curriculum vesica/parent losses → 0.000, bit-accuracy
+  1.000, intersection log-volume finite and well-dispersed (~80 ± 18,
+  no collapse) on all three seeds. The box machinery is fully
+  trainable inside a from-scratch transformer.
+- **Q2 — NO.** comp-OOD F1@G: baseline 0.5876 ± 0.0143, generic_aux
+  0.5796 ± 0.0123, curriculum 0.5702 ± 0.0166. curriculum − generic_aux
+  = −0.009 (−0.65 pooled SD); curriculum is marginally the *worst*. No
+  transfer, every seed. seen-control ceilings at 1.0 for all (gap
+  identically 0).
+
+This lands on the explicit "Q1 passes but Q2 fails" branch above:
+**do not write `experiments/04-curriculum/PRECOMMIT.md`; do not run
+the full Exp 04.** The decisive content is the *shape*: the model
+learns the explicit intersection construction perfectly on supervised
+data and that mastery is **inert** for held-out latent composition —
+the thesis's load-bearing transfer assumption fails where it had every
+structural advantage. Scope, stated precisely: this does not formally
+falsify Thesis 3 (that needs the pre-registered COGS/SCAN run); it
+removes the warrant for that run by falsifying the assumption it
+depends on, at ~3 h of laptop compute instead of a multi-GPU quarter.
+
 ## Explicit non-goals
 
 - Not COGS/SCAN/ReCOGS. Those are for the pre-registered Exp 04 only.

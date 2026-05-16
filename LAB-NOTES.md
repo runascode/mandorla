@@ -311,3 +311,81 @@ follow-up section (the post text is additive-only, like the diagnostic
 section before it; the slice's binding numbers are never edited). The
 new Exp 02 numbers are their own `RESULTS.md` with their own producing
 commit, so the audit chain stays intact.
+
+---
+
+## 2026-05-15 — Curriculum (Thesis 3) de-risked: pilot Q1 PASS, Q2 NO
+
+### What happened
+
+Before committing the 8–12-week, multi-GPU Experiment 04, a cheap
+synthetic pilot (`experiments/04-curriculum/pilot/`, local MPS, ~3 h
+total including a falsified first design) de-risked its load-bearing
+assumption. The pilot's pre-stated rule: Q1 = do the box losses train
+without collapse; Q2 = does the curriculum produce held-out
+compositional transfer beyond plain CLM *and* beyond a capacity-matched
+generic-auxiliary control. Outcome: **Q1 PASS, Q2 NO** (3 conditions ×
+3 seeds × 6000 steps).
+
+- Q1: curriculum vesica/parent losses → 0.000, bit-acc 1.000,
+  intersection log-volume finite/well-dispersed (~80±18, no collapse).
+  Fully trainable inside a from-scratch transformer.
+- Q2: comp-OOD F1@G — baseline 0.588±0.014, generic_aux 0.580±0.012,
+  curriculum 0.570±0.017. curriculum − generic_aux = −0.009
+  (−0.65 pooled SD); curriculum marginally *worst*. No transfer.
+
+### Lesson #9 — the most informative negative is "trains perfectly, inert"
+
+The first pilot world (R0) was falsified by its own baseline in ~30
+min (held-out *pairs* + individually-observed entities = trivial
+recall+AND; baseline ceilinged). The redesign (R1, 2-hop latent
+composition, entity-level held-out, generic-aux control) produced a
+*much* stronger result than a Q1 failure would have: the mechanism
+trains flawlessly and is **inert** for the capability it was posited
+to induce. "It won't optimize" is weak evidence (maybe you tuned it
+wrong). "It optimizes perfectly and changes nothing downstream" is
+strong evidence about the *idea*, not the implementation. Design
+screening experiments so the informative failure mode is the latter,
+not the former — and de-risk the load-bearing assumption *before*
+pre-registering the expensive run, never after.
+
+### Branching decision — the queue after three negatives
+
+Of the three falsifiable projections cheap enough to screen, all three
+are now negative:
+
+- **Retrieval (Thesis 2):** Exp 01 (confounded NO-GO) + Exp 02
+  (decisive, unconfounded NO-GO). Closed for this operationalization.
+- **Recursive construction (Thesis 3):** Exp 04 pilot — assumption
+  fails in clean isolation; full Exp 04 not pre-registered.
+
+Remaining: **Experiment 03 (Hex-Vote)**, Thesis 1 (geometric primacy
+in multi-agent topology). Genuinely independent infrastructure (LLM
+message-graph, no FAISS, no training run) so it does not inherit the
+other two's fate. But it is now the *last* cheap falsifiable test, and
+its prior should be set honestly: the two more-directly-testable
+projections of the same underlying thesis both failed *mechanistically*
+(displacement; inert-transfer), not marginally. Recommended sequencing,
+unchanged from the post-Exp-02 read and now reinforced:
+
+1. Write up the **LLM-saturation finding** as a standalone artifact —
+   highest value/effort, true independent of the thesis, the result
+   most likely to be cited by non-believers.
+2. Treat **Exp 03** as a real but low-prior bet, not momentum. If it
+   is run, its PRECOMMIT must include the same "isolate the variable"
+   and "capacity-matched control" discipline the curriculum pilot
+   added (Lesson #8/#9), or a positive result won't be attributable.
+3. The honest standing for the position paper is now: a pre-registered
+   program with **two disconfirmed projections, one assumption-failed
+   projection, one untested projection, and one portable methodology
+   result** — a stronger and rarer artifact than an unfalsified
+   manifesto, but it is no longer a paper whose central empirical bet
+   is open. That reframing is the user's call; the record supports it.
+
+### Publication
+
+Same discipline as Exp 01/02: the pilot is pre-PRECOMMIT and binds
+nothing, but the outcome is published, not buried. The slice blog post
+gets a third additive follow-up section (slice numbers never edited);
+the pilot's own numbers live in `pilot/LAB-NOTES.md` + `pilot/PILOT.md`
+"OUTCOME" with their producing commit, audit chain intact.

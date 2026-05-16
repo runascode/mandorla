@@ -1,8 +1,10 @@
 # Experiment 04 — Mandorla Curriculum: Recursive Construction
 
-*Last updated: 2026-05-13*
+*Last updated: 2026-05-15*
 
-**Status:** **design sketch** (pre-PRECOMMIT). No PRECOMMIT.md is locked yet. This file captures the design space and the blocking decisions that must be resolved *before* a PRECOMMIT.md can be written.
+**Status:** ⛔ **pilot complete — do not pre-register.** The de-risking pilot ([`pilot/`](./pilot/)) returned Q1 PASS / Q2 NO: the box-intersection losses train flawlessly (vesica/parent → 0.000, bit-acc 1.000, no collapse) but the perfectly-learned intersection construction produces **no** held-out compositional transfer (curriculum comp-OOD 0.570 ± 0.017 vs. baseline 0.588 ± 0.014 vs. capacity-matched generic-aux control 0.580 ± 0.012 — curriculum marginally *worst*). The full Exp 04 (100–300M from-scratch, COGS/SCAN/ReCOGS, 8–12 weeks, multi-GPU) is **not** undertaken: the assumption it depends on failed in the cleanest possible isolation. See [`pilot/PILOT.md`](./pilot/PILOT.md) "OUTCOME" and [`pilot/LAB-NOTES.md`](./pilot/LAB-NOTES.md). No `PRECOMMIT.md` will be written.
+
+This does **not** formally falsify Thesis 3 (that needs the pre-registered benchmark run); it removes the warrant for that run. The design sketch below is retained for the record.
 **Paper section:** §3.1 — Experiment 3.
 
 ## What this is
