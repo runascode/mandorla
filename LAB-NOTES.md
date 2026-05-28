@@ -420,3 +420,69 @@ its own pre-registered program; see the 2026-05-16 synthesis note on
 what the negatives positively showed (the parasitic-competence /
 masked-by-alternative-pathway direction) — recorded for the record,
 not scheduled.
+
+---
+
+## 2026-05-28 — Experiment 06 opens: cheapest-to-screen form of the architectural rescue
+
+A new pre-registered program — [`experiments/06-substrate-pilot/`](experiments/06-substrate-pilot/PILOT-DESIGN.md)
+— design landed today (pre-PRECOMMIT).
+
+### Relationship to the 2026-05-16 program-close entry
+
+That entry's *"the cheap-to-screen falsification program is formally
+complete and closed"* referred to the cheap forms of MANDORLA's three
+**original** theses (retrieval, construction, geometric-primacy-via-
+Hex-Vote). 06 is not a fourth test of any of those three; it is the
+cheap-to-screen form of the **surviving rescue** that existed beyond
+all three — *"the architecture itself must be intersection-native,"*
+named in the 2026-05-15 net-standing synthesis as "no longer an
+experiment but a multi-year program." 06 is the cheapest honest test
+of *whether* that rescue has any signal before the multi-year program
+is contemplated. The May 16 close entry explicitly anticipated this:
+*"No further hypothesis is queued. If a new thesis is pursued it
+starts its own pre-registered program."* That is what is starting.
+
+### Two stages
+
+- **Stage A** — thesis-independent literature survey of non-point,
+  non-token, non-autoregressive substrate attempts, published in
+  [`findings/substrate-rethinks-survey.md`](findings/substrate-rethinks-survey.md).
+  Same shape as
+  [`findings/reader-saturation-hotpotqa.md`](findings/reader-saturation-hotpotqa.md):
+  stands on its own, citable, survives whatever MANDORLA decides
+  about its future. Effort: 1–2 person-weeks of reading.
+- **Stage B** — full 2³ factorial pilot at 1–10M params, capacity-
+  matched across 8 conditions, testing whether region-nativeness must
+  hold *jointly* across input × representation × objective, or
+  whether the lift (if any) is carried by a single axis. PRECOMMIT
+  locked only after A's sharpening. Budget: days of laptop GPU;
+  ~24 small-model runs.
+
+### Methodological tension surfaced in the design itself
+
+`PILOT-DESIGN.md` §3 names the rescue pattern explicitly; §11
+enumerates the ways it could recurse one level deeper ("the task
+wasn't designed cleanly enough"); §5.4 pre-locks the rule that closes
+that recursion (run more seeds; if still ambiguous, close as
+inconclusive — do not redesign-and-re-run). The whole design is
+structured so that the disciplined default in every ambiguity is to
+close, not to escalate. That is the methodological lesson from the
+prior four pilots, applied here.
+
+### Thesis-independent value regardless of B's outcome
+
+Even if Stage A surfaces a prior negative that closes the question
+without B running, the survey itself is a standalone artifact: a
+filled-in `lineage × {input, representation, objective}` matrix
+across the five substrate-rethink lineages does not exist in any
+single publication, as far as the author has found. The pattern
+matches the reader-saturation note: a thesis-independent finding
+extracted as a byproduct of the thesis-dependent program.
+
+### Why this is a `LAB-NOTES.md` entry, not a `PRECOMMIT.md` amendment
+
+It is not an amendment to any existing experiment's PRECOMMIT. It is
+a new program. The PRECOMMIT for B will be locked under
+[`experiments/06-substrate-pilot/PRECOMMIT.md`](experiments/06-substrate-pilot/)
+after Stage A completes, per the sequencing in `PILOT-DESIGN.md` §7.
