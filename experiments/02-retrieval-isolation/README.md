@@ -7,7 +7,7 @@
 
 ## What this is
 
-A sharpened follow-up to the Experiment 01 screening slice (`exp1-vesica-rag/`), prompted by the diagnostic at `exp1-vesica-rag/results/DIAGNOSTIC.md`. The slice's NO-GO confounded "the primitive doesn't retrieve better evidence" with "Llama-3.1-8B saturates at top-25 dense retrieval." This experiment isolates retrieval from the downstream model: it measures Pair-Recall@25 of contriever-baseline vs. Vesica-augmented retrieval across three multi-hop datasets, with **no LLM in the loop**.
+A sharpened follow-up to the Experiment 01 screening slice (`01-vesica-rag/`), prompted by the diagnostic at `01-vesica-rag/results/DIAGNOSTIC.md`. The slice's NO-GO confounded "the primitive doesn't retrieve better evidence" with "Llama-3.1-8B saturates at top-25 dense retrieval." This experiment isolates retrieval from the downstream model: it measures Pair-Recall@25 of contriever-baseline vs. Vesica-augmented retrieval across three multi-hop datasets, with **no LLM in the loop**.
 
 Binding decisions are in [`PRECOMMIT.md`](./PRECOMMIT.md).
 
@@ -16,7 +16,7 @@ Binding decisions are in [`PRECOMMIT.md`](./PRECOMMIT.md).
 | Component | Value |
 |---|---|
 | Datasets | HotpotQA fullwiki, 2WikiMultiHop, MuSiQue-Ans (dev splits) |
-| Corpus | Same fullwiki corpus from `exp1-vesica-rag/` (~5.23M passages) |
+| Corpus | Same fullwiki corpus from `01-vesica-rag/` (~5.23M passages) |
 | Encoder | `facebook/contriever-msmarco`, mean-pool, max_len=128 |
 | Box index | d=64, random-projection seed=1337, α=22.0 (reused from Exp 01) |
 | τ_v | 214.6442 (frozen from Exp 01) |
@@ -41,7 +41,7 @@ uv run python scripts/03_evaluate_retrieval.py   # retrieval-only, both conditio
 uv run python scripts/04_score.py                # Pair-Recall@25 + CIs + decision verdict
 ```
 
-The FAISS index and box index are reused bit-for-bit from `exp1-vesica-rag/index/`; no rebuild.
+The FAISS index and box index are reused bit-for-bit from `01-vesica-rag/index/`; no rebuild.
 
 ## Artifacts on completion
 
@@ -54,4 +54,4 @@ The FAISS index and box index are reused bit-for-bit from `exp1-vesica-rag/index
 
 - Trivedi et al., *MuSiQue: Multi-hop Questions via Single-hop Question Composition*, TACL 2022 (arXiv:2108.00573).
 - Ho et al., *Constructing A Multi-hop QA Dataset for Comprehensive Evaluation of Reasoning Steps*, COLING 2020 (arXiv:2011.01060).
-- `../exp1-vesica-rag/results/DIAGNOSTIC.md` — motivating diagnostic.
+- `../01-vesica-rag/results/DIAGNOSTIC.md` — motivating diagnostic.

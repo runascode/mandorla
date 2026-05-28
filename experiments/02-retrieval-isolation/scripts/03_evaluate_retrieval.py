@@ -6,7 +6,7 @@ from Vesica-augmented. NO LLM is called.
 
 Reuses Exp 01's FAISS index, 64-D box store, random projection, τ_v,
 and QueryEncoder bit-for-bit — no re-indexing. The sys.path hack at the
-top of this script imports from `../exp1-vesica-rag/src/`.
+top of this script imports from `../01-vesica-rag/src/`.
 
 Resumable: per-question JSONL append; re-running skips ids already in
 the output file. One JSONL per dataset.

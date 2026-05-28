@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-EXP01 = Path(__file__).resolve().parents[2] / "exp1-vesica-rag"
+EXP01 = Path(__file__).resolve().parents[2] / "01-vesica-rag"
 sys.path.insert(0, str(EXP01))
 
 from src.data import TitleIndex, load_hotpotqa          # noqa: E402

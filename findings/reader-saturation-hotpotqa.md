@@ -169,7 +169,7 @@ reported separately precisely because it outlives the project it came
 from.
 
 Reproduction: `runascode/mandorla`, experiment
-`exp1-vesica-rag` (answer-side: `results/RESULTS.md`,
+`01-vesica-rag` (answer-side: `results/RESULTS.md`,
 `results/DIAGNOSTIC.md`, producing commit `5a3b34a`) and
 `02-retrieval-isolation` (retrieval-side: `results/RESULTS.md`,
 producing commit `fdf49f8`). Master seed 1337; all decoding and

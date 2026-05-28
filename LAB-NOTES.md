@@ -11,79 +11,10 @@ Entries appended in chronological order; oldest at top.
 
 ---
 
-## 2026-05-11 — Git identity rewrite (all commits to date)
-
-### What happened
-
-Every commit on `main` from the project's first commit (`fd7bcf5 MANDORLA
-v1.0: position paper, three pre-registered experiments`) through
-`bc7d5c3 Add CLAUDE.md` had author + committer set to
-`Jacob Patterson <runascode@protonmail.com>`. That email is associated with the
-`runascode` GitHub account, so the GitHub UI rendered every commit's
-author tag as `runascode`.
-
-The canonical project contact is `Jacob Patterson <runascode@protonmail.com>`
-— matching `CITATION.cff`, `LICENSE-CODE`'s copyright line, and the
-correspondence email in the paper's title block (`tex/mandorla.tex`).
-Commit attribution should match.
-
-### Procedure
-
-```
-git config user.name  "Jacob Patterson"
-git config user.email "runascode@protonmail.com"
-git rebase --root --exec 'git commit --amend --no-edit --reset-author'
-git push --force-with-lease
-```
-
-`--force-with-lease` (not `--force`) so the push fails safely if the
-remote has changed unexpectedly. 11 commits were rewritten.
-
-### What changed
-
-- **All commit SHAs.** New HEAD is `6d9b459`; the prior HEAD was `bc7d5c3`.
-  The old SHAs no longer exist on the remote.
-- **Author + committer** on every commit on `main` is now
-  `Jacob Patterson <runascode@protonmail.com>`.
-- **Commit content, messages, and order** are unchanged.
-
-### Why this is a `LAB-NOTES.md` entry, not a `PRECOMMIT.md` amendment
-
-This change does not alter any binding *design* decision about any
-experiment — no dataset changes, no metric changes, no baseline changes.
-The slice's `RESULTS.md` (when written) will still cite commit SHAs;
-those SHAs will simply be the new ones. The audit chain
-(`CLAUDE.md` §9) is intact: any reader walking from a future
-`RESULTS.md` back to the producing commits will find them under the new
-SHAs and under the correct attribution.
-
-### Effect on the outer `runascode` super-repo
-
-The outer repo at `~/Desktop/Projects/runascode` carries `mandorla` as a
-submodule under `content/mandorla`. Its staged submodule pointer was
-already uncommitted (held since the initial submodule add), so no
-force-push of the outer repo is required. The local submodule clone was
-reset to `origin/main` (now `6d9b459`) and re-staged in the outer repo's
-index.
-
-### Repo identity going forward
-
-Repo-local git config now pins:
-
-```
-user.name  = Jacob Patterson
-user.email = runascode@protonmail.com
-```
-
-Set per-repo (not globally), so the user's `runascode` identity on other
-projects is unaffected.
-
----
-
 ## 2026-05-12 — Hardware / performance lessons (carry forward to future experiments)
 
 From the Experiment 1 slice runs on the dev machine (Apple M4 Pro, 48 GB).
-Detailed accounts are in `experiments/exp1-vesica-rag/LAB-NOTES.md`; the
+Detailed accounts are in `experiments/01-vesica-rag/LAB-NOTES.md`; the
 takeaways for *any* future experiment on this class of hardware:
 
 1. **LLM inference is GPU-bound and does not parallelize on a single GPU.**
@@ -148,10 +79,10 @@ takeaways for *any* future experiment on this class of hardware:
 The Experiment 01 screening slice ran end-to-end on HotpotQA dev
 (7,405 questions). Headline F1 lift **−1.64** (95% CI −2.34, −0.93);
 vesica-coverage **4.36%** (CI 3.90, 4.82). Per the locked
-`exp1-vesica-rag/PRECOMMIT.md` decision rule (F1 lift bar +1.0 weak /
+`01-vesica-rag/PRECOMMIT.md` decision rule (F1 lift bar +1.0 weak /
 +2.0 GO **and** coverage bar +3 / +5 pp, both required for any GO
 outcome), this is **NO-GO**. Full numbers and provenance in
-`exp1-vesica-rag/results/RESULTS.md`; commit `5a3b34a`.
+`01-vesica-rag/results/RESULTS.md`; commit `5a3b34a`.
 
 ### Diagnostic on the raw outputs (not part of the binding decision)
 
@@ -181,7 +112,7 @@ slice's design confounded two separable questions (does the primitive
 retrieve different evidence; does the LLM benefit) and answered the
 second well but couldn't speak to the first.
 
-Full diagnostic at `exp1-vesica-rag/results/DIAGNOSTIC.md`.
+Full diagnostic at `01-vesica-rag/results/DIAGNOSTIC.md`.
 
 ### Lesson #7 — pre-commits must isolate the variable they intend to test
 

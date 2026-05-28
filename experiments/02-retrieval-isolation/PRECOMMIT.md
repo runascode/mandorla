@@ -5,7 +5,7 @@
 **Date locked:** 2026-05-13
 **Author:** Jacob Patterson
 **Paper version this experiment targets:** MANDORLA v1.0 (2026), §3.1 Experiment 1 (the broader version), §3.3 (falsifiability)
-**Repo numbering:** This is the **second** experiment globally (per `CLAUDE.md` §2). In paper terms it is a sharpened follow-up to Experiment 1, prompted by the diagnostic on the Vesica-RAG screening slice (`experiments/exp1-vesica-rag/results/DIAGNOSTIC.md`).
+**Repo numbering:** This is the **second** experiment globally (per `CLAUDE.md` §2). In paper terms it is a sharpened follow-up to Experiment 1, prompted by the diagnostic on the Vesica-RAG screening slice (`experiments/01-vesica-rag/results/DIAGNOSTIC.md`).
 
 ---
 

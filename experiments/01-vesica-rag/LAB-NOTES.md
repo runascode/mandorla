@@ -403,20 +403,18 @@ It went wrong twice, then we reverted:
    throughput stayed bad. The real cause, from `ollama ps`: **Ollama was
    serving with a single slot** (size 7.0 GB, context 8192) — it ignored
    the client-side `OLLAMA_NUM_PARALLEL=4` env var, because that's read
-   by `ollama serve` at start-up, and the user's Ollama was already
+   by `ollama serve` at start-up, and the local Ollama was already
    running with the default (1 parallel slot). So the 4 client workers
    just queued 4 requests at a serial Ollama → all the overhead of 4
    in-flight FAISS searches + chunk lookups + thread contention, none of
    the parallelism benefit.
 3. **The machine is at capacity.** `vm_stat` showed ~65 MB free, ~14 GB
-   inactive (reclaimable but with memory-pressure cost), and the active
-   set includes a `com.apple.Virtualization.VirtualMachine` and a
-   `unrelated-workload` dev workload — the user's other work. The
-   Python process is ~17 GB (16 GB FAISS index + ~1 GB id→idx map + the
+   inactive (reclaimable but with memory-pressure cost), with several
+   unrelated workloads active alongside the experiment. The Python
+   process is ~17 GB (16 GB FAISS index + ~1 GB id→idx map + the
    contriever model). Restarting Ollama with `OLLAMA_NUM_PARALLEL=4`
    would add ~6 GB of KV cache (4 × ~2 GB at num_ctx=8192) and risk
-   pushing the system into swap, slowing the user's other processes —
-   not worth doing unilaterally.
+   pushing the system into swap — not worth doing unilaterally.
 
 **Resolution: reverted to sequential** (`MANDORLA_N_WORKERS=1`, the
 configuration that demonstrably works at 0.18 q/s). The baseline run
@@ -425,8 +423,8 @@ work per question) similar; ~24–30 h for both, then `scripts/09`. The
 `n_workers` code stays in place (94 tests, including parallel-path
 tests, all green) — if the machine later has headroom and Ollama is
 restarted with `OLLAMA_NUM_PARALLEL≥2`, `MANDORLA_N_WORKERS=N` would
-recover the speedup. For now: thorough beats fast, and not destabilizing
-the user's machine beats both.
+recover the speedup. For now: thorough beats fast, and machine
+stability beats both.
 
 No binding decision changes — none of this touches datasets, metrics,
 baselines, the decision rule, or the prompt/decoding config. The
@@ -436,12 +434,11 @@ generator's `num_ctx=8192` was *considered* as a memory knob to drop
 
 ### Follow-up the same day — parallel Ollama retried with a clean restart, still doesn't help
 
-The user cleared the deck: stopped the dev workload (it had grown to
+Background processes were cleaned up (a runaway dev workload had spawned
 **54 node processes, 3 of them pegged at ~100–112 % CPU** — orphaned
-`unrelated dev` instances; killed all, freeing ~3 cores and ~7 GB), and
-authorized restarting Ollama. (The "Virtualization VM" in the active set
-turned out to be **a container VM**, configured `--cpus 14
---memoryMiB 8192`; left running at the user's request.)
+worker instances; killed all, freeing ~3 cores and ~7 GB), and Ollama
+was restarted. (One container VM in the active set was left running as
+it was needed for unrelated work.)
 
 So we retried the parallel path properly: stopped the baseline run cleanly
 (796 records preserved, resumable), killed `ollama serve`, restarted it

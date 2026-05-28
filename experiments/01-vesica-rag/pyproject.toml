@@ -1,7 +1,7 @@
 [project]
-name = "exp1-vesica-rag"
+name = "exp01-vesica-rag"
 version = "0.1.0"
-description = "Mandorla Experiment 1 — Vesica-RAG vs. dense baseline on HotpotQA dev (smallest defensible slice, §3.4)."
+description = "Mandorla Experiment 01 — Vesica-RAG vs. dense baseline on HotpotQA dev (smallest defensible slice, §3.4)."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "box-embeddings>=0.1.0",

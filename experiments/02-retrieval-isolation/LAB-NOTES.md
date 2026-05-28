@@ -7,7 +7,7 @@ Append-only chronological log. Oldest at top. Project-wide notes go in the proje
 ## 2026-05-13 — Experiment scoped
 
 Triggered by the Experiment 01 slice diagnostic
-(`exp1-vesica-rag/results/DIAGNOSTIC.md`):
+(`01-vesica-rag/results/DIAGNOSTIC.md`):
 
 - Coverage-hit subset (n=323) showed F1 lift −0.01 (CI −0.04, +0.02) →
   H1 ("coverage is the bottleneck") falsified.

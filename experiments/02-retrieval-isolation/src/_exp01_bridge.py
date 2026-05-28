@@ -2,7 +2,7 @@
 
 Exp 02 reuses Exp 01's FAISS index, box store, projection, encoder, and
 retrieval primitives bit-for-bit. We need to *import* those primitives
-from `experiments/exp1-vesica-rag/src/` without colliding with Exp 02's
+from `experiments/01-vesica-rag/src/` without colliding with Exp 02's
 own `src/` package.
 
 The trick: register Exp 01's `src/` directory as a *separately named*
@@ -22,7 +22,7 @@ import sys
 import types
 from pathlib import Path
 
-EXP01_SRC = Path(__file__).resolve().parents[2] / "exp1-vesica-rag" / "src"
+EXP01_SRC = Path(__file__).resolve().parents[2] / "01-vesica-rag" / "src"
 if not EXP01_SRC.exists():
     raise RuntimeError(f"exp01 src/ not found at {EXP01_SRC}")
 

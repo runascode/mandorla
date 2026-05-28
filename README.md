@@ -34,7 +34,7 @@ If they don't hold, the paper says so in §3.3, and the negative result gets rep
 | Position paper v1.0 (`mandorla.md`, `tex/mandorla.tex`) | ✅ Published — 2026-05-10 |
 | arXiv preprint | 🟡 Pending endorsement |
 | Site at runascode.com/mandorla | ✅ Live |
-| **Experiment 01 — Vesica-RAG screening slice** ([`experiments/exp1-vesica-rag/`](./experiments/exp1-vesica-rag/)) | ✅ **Complete — NO-GO** (2026-05-13). See [`RESULTS.md`](./experiments/exp1-vesica-rag/results/RESULTS.md) and the post-hoc [`DIAGNOSTIC.md`](./experiments/exp1-vesica-rag/results/DIAGNOSTIC.md). |
+| **Experiment 01 — Vesica-RAG screening slice** ([`experiments/01-vesica-rag/`](./experiments/01-vesica-rag/)) | ✅ **Complete — NO-GO** (2026-05-13). See [`RESULTS.md`](./experiments/01-vesica-rag/results/RESULTS.md) and the post-hoc [`DIAGNOSTIC.md`](./experiments/01-vesica-rag/results/DIAGNOSTIC.md). |
 | **Experiment 02 — Retrieval-isolation test** ([`experiments/02-retrieval-isolation/`](./experiments/02-retrieval-isolation/)) | ✅ **Complete — decisive NO-GO** (2026-05-15). Pair-Recall@25 lift −10.65 / −6.99 / −3.23 pp (HotpotQA / 2Wiki / MuSiQue). See [`RESULTS.md`](./experiments/02-retrieval-isolation/results/RESULTS.md). |
 | Experiment 04 — Mandorla Curriculum ([`experiments/04-curriculum/`](./experiments/04-curriculum/)) | ⛔ **Both pilots complete — do not pre-register** (2026-05-15). Curriculum pilot: Q1 PASS, Q2 NO (perfectly-learned intersection construction → no held-out transfer). Operator pilot ([`pilot2-operator/`](./experiments/04-curriculum/pilot2-operator/)): **decisive negative**, intersection-on-critical-path/no-bypass/capacity-matched still loses to point composition (Δ_AND −0.013, all seeds, both tasks). |
 | Experiment 03 — Hex-Vote ([`experiments/03-hex-vote/`](./experiments/03-hex-vote/)) | 🔲 Design sketch — pre-PRECOMMIT. The **only** projection not tested; runs on independent infra; prior now very low (see narrative). |
@@ -65,7 +65,7 @@ There is also a project-level [`LAB-NOTES.md`](./LAB-NOTES.md) for repo-wide eve
 
 ## Stack (current slice)
 
-Pinned per [`experiments/exp1-vesica-rag/pyproject.toml`](./experiments/exp1-vesica-rag/pyproject.toml):
+Pinned per [`experiments/01-vesica-rag/pyproject.toml`](./experiments/01-vesica-rag/pyproject.toml):
 
 - **Python 3.12** (newer versions lack ML wheels at time of writing)
 - **`uv`** for environment + dependency management
@@ -74,7 +74,7 @@ Pinned per [`experiments/exp1-vesica-rag/pyproject.toml`](./experiments/exp1-ves
 - **`iesl/box-embeddings`** (`pip install box-embeddings`) for the GumbelBox primitive
 - **`faiss-cpu`** for the contriever index (IndexFlatIP, exact) and the 64-D box-space kNN (HNSW)
 - **`datasets`** (HuggingFace) for HotpotQA and the BeIR/hotpotqa Wikipedia corpus
-- **Ollama** running `llama3.1:8b-instruct-q5_K_M` for answer generation (decoding pinned in [`experiments/exp1-vesica-rag/Modelfile`](./experiments/exp1-vesica-rag/Modelfile) and in code; `temperature=0`, `seed=1337`)
+- **Ollama** running `llama3.1:8b-instruct-q5_K_M` for answer generation (decoding pinned in [`experiments/01-vesica-rag/Modelfile`](./experiments/01-vesica-rag/Modelfile) and in code; `temperature=0`, `seed=1337`)
 
 The deferred / future-work stack (agent topology for Experiment 2, training infrastructure for Experiment 3, NATS / Qdrant / Pydantic-as-schema-bus) is specified in `mandorla.md` §2.3 and §3.4 — not in scope for the current slice.
 
@@ -94,7 +94,7 @@ mandorla/
 │   ├── mandorla.tex             # arXiv LaTeX source
 │   └── mandorla.pdf             # compiled paper
 └── experiments/
-    ├── exp1-vesica-rag/         # ✅ complete — NO-GO
+    ├── 01-vesica-rag/         # ✅ complete — NO-GO
     │   ├── PRECOMMIT.md         # binding design (locked 2026-05-10)
     │   ├── LAB-NOTES.md         # experiment-level chronological log
     │   ├── BENCHMARKS.md        # throughput / cost measurements

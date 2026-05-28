@@ -8,7 +8,7 @@ The PRECOMMIT decision rule excludes any dataset with coverage <70%
 from the GO/WEAK-GO computation (and adjusts the n-of-3 rule).
 
 The slice corpus's title index lives at
-`../exp1-vesica-rag/index/title_to_chunk_id.json`. We load it via the
+`../01-vesica-rag/index/title_to_chunk_id.json`. We load it via the
 slice's TitleIndex helper to avoid re-implementing the title→chunk
 lookup.
 """
